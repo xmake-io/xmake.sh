@@ -22,11 +22,42 @@
 xmake_sh_rootdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 xmake_sh_version="1.0"
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
+
+# detect hosts
 xmake_sh_host=`uname | tr '[A-Z]' '[a-z]'`
+if echo "${xmake_sh_host}" | grep cygwin >/dev/null 2>&1; then
+    xmake_sh_host_cygwin=true
+else
+    xmake_sh_host_cygwin=false
+fi
+if echo "${xmake_sh_host}" | grep msys >/dev/null 2>&1; then
+    xmake_sh_host_msys=true
+else
+    xmake_sh_host_msys=false
+fi
+if echo "${xmake_sh_host}" | grep mingw >/dev/null 2>&1; then
+    xmake_sh_host_mingw=true
+else
+    xmake_sh_host_mingw=false
+fi
+if echo "${xmake_sh_host}" | grep darwin >/dev/null 2>&1; then
+    xmake_sh_host_darwin=true
+else
+    xmake_sh_host_darwin=false
+fi
+
+# detect host architecture
 xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 
 _die() {
     echo "$@" 1>&2 ; exit 1
+}
+
+_find() {
+    local dir=${1}
+    local name=${2}
+    local depth=${3}
+    echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
 }
 
 # include the given xmake.sh file or directory
@@ -191,7 +222,7 @@ _load_targets()
         includes "${file}"
     else
         # include all xmake.sh files in next sub-directories
-        local files=`find ${xmake_sh_rootdir} -maxdepth 2 -mindepth 2 -name "xmake.sh"`
+        local files=`_find "${xmake_sh_rootdir}" "xmake.sh" 2`
         for file in ${files}; do
             includes "${file}"
         done
