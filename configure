@@ -21,31 +21,36 @@
 # get root directory
 xmake_sh_rootdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 
-# ######################################################################################
-# define some basic functions
-#
-
 die() {
     echo "$@" 1>&2 ; exit 1
 }
 
+# include the given xmake.sh file or directory
 includes()
 {
-    . "$xmake_sh_rootdir/${1}/xmake.sh"
+    local path=${1}
+    if [ -d "${path}" ]; then
+        . "${path}/xmake.sh"
+    elif [ -f "${path}" ]; then
+        . "${path}"
+    else
+        . "${xmake_sh_rootdir}/${path}/xmake.sh"
+    fi
 }
 
-
-echo "hello"
-
-xmake_sh_test()
+# include xmake.sh file in root directory
+_includes_xmake_sh()
 {
-    echo "test"
+    local file=${xmake_sh_rootdir}/xmake.sh
+    if [ -f "${file}" ]; then
+        includes "${file}"
+    else
+        # include all xmake.sh files in next sub-directories
+        local files=`find ${xmake_sh_rootdir} -depth 2 -name "xmake.sh"`
+        for file in ${files}; do
+            includes "${file}"
+        done
+    fi
 }
+_includes_xmake_sh
 
-
-includes src
-
-xx=`xmake_sh_test2`
-echo "xx: $xx"
-
-xmake_sh_test2
