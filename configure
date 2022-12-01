@@ -96,9 +96,6 @@ is_hostarch()
 # e.g. includes "src" "tests"
 includes()
 {
-    if ! ${_loading_targets}; then
-        return
-    fi
     for path in $@; do
         if test -f "${path}"; then
             _includes_rootdir=$(dirname -- "${path}")
@@ -211,12 +208,12 @@ _load_options()
     _loading_targets=false
     local file=${xmake_sh_rootdir}/xmake.sh
     if test -f "${file}"; then
-        . "${file}"
+        includes "${file}"
     else
         # include all xmake.sh files in next sub-directories
         local files=`find ${xmake_sh_rootdir} -maxdepth 2 -mindepth 2 -name "xmake.sh"`
         for file in ${files}; do
-            . "${file}"
+            includes "${file}"
         done
     fi
 }
