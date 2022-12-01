@@ -1,7 +1,7 @@
 #!/bin/sh
 
-option "debug" "Enable debug compilation mode."
-option "tests" "Enable tests."
+option "debug" "Enable debug compilation mode." false
+option "tests" "Enable tests." true
 
 target "demo"
     set_kind "binary"

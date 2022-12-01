@@ -75,17 +75,17 @@ is_host()
 }
 
 # detect host architecture
-xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
+xmake_sh_hostarch=`uname -m | tr '[A-Z]' '[a-z]'`
 
 # determining host architecture
 # e.g.
-# if is_arch "x86_64" "i386"; then
+# if is_hostarch "x86_64" "i386"; then
 #     ...
 # fi
-is_arch()
+is_hostarch()
 {
     for arch in $@; do
-        if test "x${xmake_sh_arch}" == "x${arch}"; then
+        if test "x${xmake_sh_hostarch}" == "x${arch}"; then
             return 0
         fi
     done
@@ -122,7 +122,9 @@ option()
     if ! ${_loading_options}; then
         return
     fi
-    echo "${1}" "${2}"
+    xmake_sh_option_names="${xmake_sh_option_names} ${1}"
+    xmake_sh_option_descriptions="${xmake_sh_option_descriptions} ${2}"
+    xmake_sh_option_defaults="${xmake_sh_option_defaults} ${3}"
 }
 
 # is config for option
