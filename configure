@@ -41,43 +41,23 @@ _tolower()
 xmake_sh_host=`uname`
 xmake_sh_host=`_tolower ${xmake_sh_host}`
 if echo "${xmake_sh_host}" | grep cygwin >/dev/null 2>&1; then
-    xmake_sh_host_cygwin=true
-else
-    xmake_sh_host_cygwin=false
+    xmake_sh_host="cygwin"
 fi
 if echo "${xmake_sh_host}" | grep msys >/dev/null 2>&1; then
-    xmake_sh_host_msys=true
-else
-    xmake_sh_host_msys=false
-fi
-if echo "${xmake_sh_host}" | grep mingw >/dev/null 2>&1; then
-    xmake_sh_host_mingw=true
-else
-    xmake_sh_host_mingw=false
+    xmake_sh_host="msys"
 fi
 if echo "${xmake_sh_host}" | grep darwin >/dev/null 2>&1; then
-    xmake_sh_host_macosx=true
-else
-    xmake_sh_host_macosx=false
+    xmake_sh_host="macosx"
 fi
 if echo "${xmake_sh_host}" | grep linux >/dev/null 2>&1; then
-    xmake_sh_host_linux=true
-else
-    xmake_sh_host_linux=false
+    xmake_sh_host="linux"
 fi
 if echo "${xmake_sh_host}" | grep freebsd >/dev/null 2>&1; then
-    xmake_sh_host_freebsd=true
-else
-    xmake_sh_host_freebsd=false
+    xmake_sh_host="freebsd"
 fi
 if echo "${xmake_sh_host}" | grep bsd >/dev/null 2>&1; then
-    xmake_sh_host_bsd=true
-else
-    xmake_sh_host_bsd=false
+    xmake_sh_host="bsd"
 fi
-
-# detect host architecture
-xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 
 # determining host
 # e.g.
@@ -87,8 +67,25 @@ xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 is_host()
 {
     for host in $@; do
-        local ok="$(eval echo '$xmake_sh_host_'${host})"
-        if ${ok}; then
+        if test "x${xmake_sh_host}" == "x${host}"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# detect host architecture
+xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
+
+# determining host architecture
+# e.g.
+# if is_arch "x86_64" "i386"; then
+#     ...
+# fi
+is_arch()
+{
+    for arch in $@; do
+        if test "x${xmake_sh_arch}" == "x${arch}"; then
             return 0
         fi
     done
@@ -103,12 +100,12 @@ includes()
         return
     fi
     for path in $@; do
-        if [ -f "${path}" ]; then
+        if test -f "${path}"; then
             _includes_rootdir=$(dirname -- "${path}")
             . "${path}"
         else
             local _includes_rootdir_cur=${_includes_rootdir}
-            if [ "x${_includes_rootdir}" != "x" ]; then
+            if test "x${_includes_rootdir}" != "x"; then
                 _includes_rootdir="${_includes_rootdir_cur}/${path}"
                 . "${_includes_rootdir}/xmake.sh"
             else
@@ -211,7 +208,7 @@ _load_options()
     _loading_options=true
     _loading_targets=false
     local file=${xmake_sh_rootdir}/xmake.sh
-    if [ -f "${file}" ]; then
+    if test -f "${file}"; then
         . "${file}"
     else
         # include all xmake.sh files in next sub-directories
@@ -269,7 +266,7 @@ _load_targets()
     _loading_options=false
     _loading_targets=true
     local file=${xmake_sh_rootdir}/xmake.sh
-    if [ -f "${file}" ]; then
+    if test -f "${file}"; then
         includes "${file}"
     else
         # include all xmake.sh files in next sub-directories
