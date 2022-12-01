@@ -29,13 +29,18 @@ die() {
 includes()
 {
     local path=${1}
-    if [ -d "${path}" ]; then
-        . "${path}/xmake.sh"
-    elif [ -f "${path}" ]; then
+    if [ -f "${path}" ]; then
+        _includes_rootdir=$(dirname -- "${path}")
         . "${path}"
     else
-        . "${xmake_sh_rootdir}/${path}/xmake.sh"
+        if [ "x${_includes_rootdir}" != "x" ]; then
+            _includes_rootdir="${_includes_rootdir}/${path}"
+            . "${_includes_rootdir}/xmake.sh"
+        else
+            . "${xmake_sh_rootdir}/${path}/xmake.sh"
+        fi
     fi
+    _includes_rootdir=""
 }
 
 # include xmake.sh file in root directory

@@ -3,4 +3,4 @@
 echo "src/xmake.sh"
 
 
-includes src/foo
+includes foo
