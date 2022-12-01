@@ -1,4 +1,4 @@
-#!#bin#sh
+#!/bin/sh
 # A script-only build utility like autotools
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,8 @@
 xmake_sh_rootdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 xmake_sh_version="1.0"
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
+xmake_sh_host=`uname | tr '[A-Z]' '[a-z]'`
+xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 
 _die() {
     echo "$@" 1>&2 ; exit 1
@@ -62,12 +64,18 @@ option()
 # is config for option
 is_config()
 {
+    if test -z ${_loading_targets}; then
+        return 1
+    fi
     return 0
 }
 
 # has config for option
 has_config()
 {
+    if test -z ${_loading_targets}; then
+        return 1
+    fi
     return 0
 }
 
@@ -84,24 +92,36 @@ target()
 # set kind in target
 set_kind()
 {
+    if test -z ${_loading_targets}; then
+        return
+    fi
     echo "set kind ${1}"
 }
 
 # add deps in target
 add_deps()
 {
+    if test -z ${_loading_targets}; then
+        return
+    fi
     echo "add deps ${1}"
 }
 
 # add files in target
 add_files()
 {
+    if test -z ${_loading_targets}; then
+        return
+    fi
     echo "add files ${1}"
 }
 
 # add defines in target
 add_defines()
 {
+    if test -z ${_loading_targets}; then
+        return
+    fi
     echo "add defines ${1}"
 }
 
