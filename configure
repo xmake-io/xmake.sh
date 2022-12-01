@@ -56,9 +56,9 @@ else
     xmake_sh_host_mingw=false
 fi
 if echo "${xmake_sh_host}" | grep darwin >/dev/null 2>&1; then
-    xmake_sh_host_darwin=true
+    xmake_sh_host_macosx=true
 else
-    xmake_sh_host_darwin=false
+    xmake_sh_host_macosx=false
 fi
 if echo "${xmake_sh_host}" | grep linux >/dev/null 2>&1; then
     xmake_sh_host_linux=true
@@ -79,18 +79,24 @@ fi
 # detect host architecture
 xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 
-_find() {
-    local dir=${1}
-    local name=${2}
-    local depth=${3}
-    if ${xmake_sh_host_darwin}; then
-        echo `find ${dir} -depth ${depth} -name "${name}"`
-    else
-        echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
-    fi
+# determining host
+# e.g.
+# if is_host "linux" "macosx"; then
+#     ...
+# fi
+is_host()
+{
+    for host in $@; do
+        local ok="$(eval echo '$xmake_sh_host_'${host})"
+        if ${ok}; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 # include the given xmake.sh file or directory
+# e.g. includes "src" "tests"
 includes()
 {
     if ! ${_loading_targets}; then
@@ -184,6 +190,19 @@ add_defines()
         return
     fi
     echo "add defines ${1}"
+}
+
+# find file in the given directory
+# e.g. _find . xmake.sh
+_find() {
+    local dir=${1}
+    local name=${2}
+    local depth=${3}
+    if is_host "macosx"; then
+        echo `find ${dir} -depth ${depth} -name "${name}"`
+    else
+        echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+    fi
 }
 
 # load options
