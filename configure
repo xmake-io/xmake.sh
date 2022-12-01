@@ -134,7 +134,7 @@ _load_options()
         . "${file}"
     else
         # include all xmake.sh files in next sub-directories
-        local files=`find ${xmake_sh_rootdir} -depth 2 -name "xmake.sh"`
+        local files=`find ${xmake_sh_rootdir} -maxdepth 2 -mindepth 2 -name "xmake.sh"`
         for file in ${files}; do
             . "${file}"
         done
@@ -191,7 +191,7 @@ _load_targets()
         includes "${file}"
     else
         # include all xmake.sh files in next sub-directories
-        local files=`find ${xmake_sh_rootdir} -depth 2 -name "xmake.sh"`
+        local files=`find ${xmake_sh_rootdir} -maxdepth 2 -mindepth 2 -name "xmake.sh"`
         for file in ${files}; do
             includes "${file}"
         done
