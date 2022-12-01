@@ -37,6 +37,12 @@ _tolower()
     echo "$1" | tr '[A-Z]' '[a-z]'
 }
 
+#y=cat
+#eval x$y=9
+#p=$(eval echo \$x$y)
+#echo $p
+#echo $xcat
+
 # detect hosts
 xmake_sh_host=`uname`
 xmake_sh_host=`_tolower ${xmake_sh_host}`
@@ -67,7 +73,7 @@ fi
 is_host()
 {
     for host in $@; do
-        if test "x${xmake_sh_host}" == "x${host}"; then
+        if test "x${xmake_sh_host}" = "x${host}"; then
             return 0
         fi
     done
@@ -85,7 +91,7 @@ xmake_sh_hostarch=`uname -m | tr '[A-Z]' '[a-z]'`
 is_hostarch()
 {
     for arch in $@; do
-        if test "x${xmake_sh_hostarch}" == "x${arch}"; then
+        if test "x${xmake_sh_hostarch}" = "x${arch}"; then
             return 0
         fi
     done
