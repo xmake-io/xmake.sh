@@ -30,19 +30,28 @@ _die() {
 # include the given xmake.sh file or directory
 includes()
 {
-    local path=${1}
-    if [ -f "${path}" ]; then
-        _includes_rootdir=$(dirname -- "${path}")
-        . "${path}"
-    else
-        if [ "x${_includes_rootdir}" != "x" ]; then
-            _includes_rootdir="${_includes_rootdir}/${path}"
-            . "${_includes_rootdir}/xmake.sh"
+    for path in $@; do
+        if [ -f "${path}" ]; then
+            _includes_rootdir=$(dirname -- "${path}")
+            . "${path}"
         else
-            . "${xmake_sh_rootdir}/${path}/xmake.sh"
+            local _includes_rootdir_cur=${_includes_rootdir}
+            if [ "x${_includes_rootdir}" != "x" ]; then
+                _includes_rootdir="${_includes_rootdir_cur}/${path}"
+                . "${_includes_rootdir}/xmake.sh"
+            else
+                . "${xmake_sh_rootdir}/${path}/xmake.sh"
+            fi
+            _includes_rootdir=${_includes_rootdir_cur}
         fi
-    fi
+    done
     _includes_rootdir=""
+}
+
+# define option
+option()
+{
+    echo "${1}" "${2}"
 }
 
 # show configure usage
