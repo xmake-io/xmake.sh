@@ -18,8 +18,10 @@
 # @author      ruki
 #
 
-# get root directory
+# init some constants
 xmake_sh_rootdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
+xmake_sh_version="1.0"
+xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
 
 die() {
     echo "$@" 1>&2 ; exit 1
@@ -63,10 +65,19 @@ Directory and file names:
   exit 10
 }
 
+# show xmake.sh version
+_show_version()
+{
+    echo "xmake.sh v${xmake_sh_version}, A script-only build utility like autotools"
+    echo "${xmake_sh_copyright}"
+    echo ""
+}
+
 # parse input arguments
 while test $# != 0; do
     case "$1" in
     --help) _show_usage ;;
+    --version) _show_version ; exit 2 ;;
     --) shift; break ;;
     *) die "Unknown option: $1" ;;
     esac
