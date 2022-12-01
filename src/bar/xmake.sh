@@ -1,3 +1,5 @@
 #!/bin/sh
 
-echo "bar"
+target "bar"
+    set_kind "static"
+    add_files "bar.cpp"

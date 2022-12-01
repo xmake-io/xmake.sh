@@ -30,6 +30,9 @@ _die() {
 # include the given xmake.sh file or directory
 includes()
 {
+    if [ "x${_loading_scope}" != "xtargets" ]; then
+        return
+    fi
     for path in $@; do
         if [ -f "${path}" ]; then
             _includes_rootdir=$(dirname -- "${path}")
@@ -45,14 +48,79 @@ includes()
             _includes_rootdir=${_includes_rootdir_cur}
         fi
     done
-    _includes_rootdir=""
 }
 
 # define option
 option()
 {
+    if [ "x${_loading_scope}" != "xoptions" ]; then
+        return
+    fi
     echo "${1}" "${2}"
 }
+
+# is config for option
+is_config()
+{
+    return 0
+}
+
+# has config for option
+has_config()
+{
+    return 0
+}
+
+# define target
+target()
+{
+    if [ "x${_loading_scope}" != "xtargets" ]; then
+        return
+    fi
+    echo "${1}" "${2}"
+    return 0
+}
+
+# set kind in target
+set_kind()
+{
+    echo "set kind ${1}"
+}
+
+# add deps in target
+add_deps()
+{
+    echo "add deps ${1}"
+}
+
+# add files in target
+add_files()
+{
+    echo "add files ${1}"
+}
+
+# add defines in target
+add_defines()
+{
+    echo "add defines ${1}"
+}
+
+# load options
+_load_options()
+{
+    _loading_scope="options"
+    local file=${xmake_sh_rootdir}/xmake.sh
+    if [ -f "${file}" ]; then
+        . "${file}"
+    else
+        # include all xmake.sh files in next sub-directories
+        local files=`find ${xmake_sh_rootdir} -depth 2 -name "xmake.sh"`
+        for file in ${files}; do
+            . "${file}"
+        done
+    fi
+}
+_load_options
 
 # show configure usage
 _show_usage()
@@ -93,9 +161,10 @@ while test $# != 0; do
     shift
 done
 
-# include xmake.sh file in root directory
-_includes_xmake_sh()
+# load targets
+_load_targets()
 {
+    _loading_scope="targets"
     local file=${xmake_sh_rootdir}/xmake.sh
     if [ -f "${file}" ]; then
         includes "${file}"
@@ -107,5 +176,5 @@ _includes_xmake_sh()
         done
     fi
 }
-_includes_xmake_sh
+_load_targets
 
