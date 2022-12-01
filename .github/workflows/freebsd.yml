@@ -1,0 +1,36 @@
+name: FreeBSD
+
+on:
+  pull_request:
+  push:
+  release:
+    types: [published]
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        os: [macOS-12]
+        kind: [static, shared]
+
+    runs-on: ${{ matrix.os }}
+
+    concurrency:
+        group: ${{ github.ref }}-${{ github.base_ref }}-${{ github.head_ref }}-FreeBSD-${{ matrix.kind }}
+        cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Tests
+        uses: vmactions/freebsd-vm@v0
+        with:
+          usesh: true
+          sync: sshfs
+          mem: 4096
+          copyback: false
+          prepare: pkg install -y git curl unzip gmake llvm gsed bash perl5 openssl
+          run: |
+            ./configure
+
+

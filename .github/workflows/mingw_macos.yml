@@ -1,0 +1,31 @@
+name: MingW (MacOS)
+
+on:
+  pull_request:
+  push:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macOS-latest]
+        kind: [static, shared]
+
+    runs-on: ${{ matrix.os }}
+
+    concurrency:
+        group: ${{ github.ref }}-${{ github.base_ref }}-${{ github.head_ref }}-MingW-macOS-${{ matrix.kind }}
+        cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Prepare
+        run: |
+          brew install mingw-w64
+
+      - name: Tests
+        run: |
+          ./configure
+

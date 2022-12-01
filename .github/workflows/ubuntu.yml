@@ -1,0 +1,38 @@
+name: Linux
+
+on:
+  pull_request:
+  push:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        kind: [static, shared]
+
+    runs-on: ${{ matrix.os }}
+
+    concurrency:
+        group: ${{ github.ref }}-${{ github.base_ref }}-${{ github.head_ref }}-Linux-${{ matrix.kind }}
+        cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Installation
+        run: |
+          # TODO we will remove it later
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 60
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60
+          sudo update-alternatives --install /usr/bin/cpp cpp /usr/bin/cpp-9 60
+          sudo update-alternatives --set g++ /usr/bin/g++-9
+          sudo update-alternatives --set gcc /usr/bin/gcc-9
+          sudo update-alternatives --set cpp /usr/bin/cpp-9
+
+      - name: Tests
+        run: |
+          ./configure

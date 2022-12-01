@@ -23,7 +23,7 @@ xmake_sh_rootdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 xmake_sh_version="1.0"
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
 
-die() {
+_die() {
     echo "$@" 1>&2 ; exit 1
 }
 
@@ -79,7 +79,7 @@ while test $# != 0; do
     --help) _show_usage ;;
     --version) _show_version ; exit 2 ;;
     --) shift; break ;;
-    *) die "Unknown option: $1" ;;
+    *) _die "Unknown option: $1" ;;
     esac
     shift
 done
