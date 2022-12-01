@@ -1,7 +1,5 @@
 #!/bin/sh
 
-echo "src/xmake.sh"
-
 option "debug" "Enable debug compilation mode."
 option "tests" "Enable tests."
 

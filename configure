@@ -30,7 +30,7 @@ _die() {
 # include the given xmake.sh file or directory
 includes()
 {
-    if [ "x${_loading_scope}" != "xtargets" ]; then
+    if test -z ${_loading_targets}; then
         return
     fi
     for path in $@; do
@@ -53,7 +53,7 @@ includes()
 # define option
 option()
 {
-    if [ "x${_loading_scope}" != "xoptions" ]; then
+    if test -z ${_loading_options}; then
         return
     fi
     echo "${1}" "${2}"
@@ -74,7 +74,7 @@ has_config()
 # define target
 target()
 {
-    if [ "x${_loading_scope}" != "xtargets" ]; then
+    if test -z ${_loading_targets}; then
         return
     fi
     echo "${1}" "${2}"
@@ -108,7 +108,7 @@ add_defines()
 # load options
 _load_options()
 {
-    _loading_scope="options"
+    _loading_options=true
     local file=${xmake_sh_rootdir}/xmake.sh
     if [ -f "${file}" ]; then
         . "${file}"
@@ -119,6 +119,7 @@ _load_options()
             . "${file}"
         done
     fi
+    _loading_options=
 }
 _load_options
 
@@ -164,7 +165,7 @@ done
 # load targets
 _load_targets()
 {
-    _loading_scope="targets"
+    _loading_targets=true
     local file=${xmake_sh_rootdir}/xmake.sh
     if [ -f "${file}" ]; then
         includes "${file}"
@@ -175,6 +176,7 @@ _load_targets()
             includes "${file}"
         done
     fi
+    _loading_targets=
 }
 _load_targets
 
