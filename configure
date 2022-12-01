@@ -45,9 +45,28 @@ if echo "${xmake_sh_host}" | grep darwin >/dev/null 2>&1; then
 else
     xmake_sh_host_darwin=false
 fi
+if echo "${xmake_sh_host}" | grep linux >/dev/null 2>&1; then
+    xmake_sh_host_linux=true
+else
+    xmake_sh_host_linux=false
+fi
+if echo "${xmake_sh_host}" | grep freebsd >/dev/null 2>&1; then
+    xmake_sh_host_freebsd=true
+else
+    xmake_sh_host_freebsd=false
+fi
+if echo "${xmake_sh_host}" | grep bsd >/dev/null 2>&1; then
+    xmake_sh_host_bsd=true
+else
+    xmake_sh_host_bsd=false
+fi
 
 # detect host architecture
 xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
+
+if ${xxx}; then
+    echo done
+fi
 
 _die() {
     echo "$@" 1>&2 ; exit 1
@@ -57,13 +76,17 @@ _find() {
     local dir=${1}
     local name=${2}
     local depth=${3}
-    echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+    if ${xmake_sh_host_darwin}; then
+        echo `find ${dir} -depth ${depth} -name "${name}"`
+    else
+        echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+    fi
 }
 
 # include the given xmake.sh file or directory
 includes()
 {
-    if test -z ${_loading_targets}; then
+    if ! ${_loading_targets}; then
         return
     fi
     for path in $@; do
@@ -86,7 +109,7 @@ includes()
 # define option
 option()
 {
-    if test -z ${_loading_options}; then
+    if ! ${_loading_options}; then
         return
     fi
     echo "${1}" "${2}"
@@ -95,7 +118,7 @@ option()
 # is config for option
 is_config()
 {
-    if test -z ${_loading_targets}; then
+    if ! ${_loading_targets}; then
         return 1
     fi
     return 0
@@ -104,7 +127,7 @@ is_config()
 # has config for option
 has_config()
 {
-    if test -z ${_loading_targets}; then
+    if ! ${_loading_targets}; then
         return 1
     fi
     return 0
@@ -113,7 +136,7 @@ has_config()
 # define target
 target()
 {
-    if test -z ${_loading_targets}; then
+    if ! ${_loading_targets}; then
         return
     fi
     echo "${1}" "${2}"
@@ -123,7 +146,7 @@ target()
 # set kind in target
 set_kind()
 {
-    if test -z ${_loading_targets}; then
+    if ! ${_loading_targets}; then
         return
     fi
     echo "set kind ${1}"
@@ -132,7 +155,7 @@ set_kind()
 # add deps in target
 add_deps()
 {
-    if test -z ${_loading_targets}; then
+    if ! ${_loading_targets}; then
         return
     fi
     echo "add deps ${1}"
@@ -141,7 +164,7 @@ add_deps()
 # add files in target
 add_files()
 {
-    if test -z ${_loading_targets}; then
+    if ! ${_loading_targets}; then
         return
     fi
     echo "add files ${1}"
@@ -150,7 +173,7 @@ add_files()
 # add defines in target
 add_defines()
 {
-    if test -z ${_loading_targets}; then
+    if ! ${_loading_targets}; then
         return
     fi
     echo "add defines ${1}"
@@ -160,6 +183,7 @@ add_defines()
 _load_options()
 {
     _loading_options=true
+    _loading_targets=false
     local file=${xmake_sh_rootdir}/xmake.sh
     if [ -f "${file}" ]; then
         . "${file}"
@@ -170,9 +194,9 @@ _load_options()
             . "${file}"
         done
     fi
-    _loading_options=
 }
 _load_options
+echo "load options done"
 
 # show configure usage
 _show_usage()
@@ -216,6 +240,7 @@ done
 # load targets
 _load_targets()
 {
+    _loading_options=false
     _loading_targets=true
     local file=${xmake_sh_rootdir}/xmake.sh
     if [ -f "${file}" ]; then
@@ -227,7 +252,6 @@ _load_targets()
             includes "${file}"
         done
     fi
-    _loading_targets=
 }
 _load_targets
 
