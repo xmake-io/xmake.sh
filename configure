@@ -23,8 +23,23 @@ xmake_sh_rootdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 xmake_sh_version="1.0"
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
 
+_die() {
+    echo "$@" 1>&2 ; exit 1
+}
+
+_toupper()
+{
+    echo "$1" | tr '[a-z]' '[A-Z]'
+}
+
+_tolower()
+{
+    echo "$1" | tr '[A-Z]' '[a-z]'
+}
+
 # detect hosts
-xmake_sh_host=`uname | tr '[A-Z]' '[a-z]'`
+xmake_sh_host=`uname`
+xmake_sh_host=`_tolower ${xmake_sh_host}`
 if echo "${xmake_sh_host}" | grep cygwin >/dev/null 2>&1; then
     xmake_sh_host_cygwin=true
 else
@@ -63,14 +78,6 @@ fi
 
 # detect host architecture
 xmake_sh_arch=`uname -m | tr '[A-Z]' '[a-z]'`
-
-if ${xxx}; then
-    echo done
-fi
-
-_die() {
-    echo "$@" 1>&2 ; exit 1
-}
 
 _find() {
     local dir=${1}
