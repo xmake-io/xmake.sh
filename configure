@@ -43,6 +43,36 @@ includes()
     _includes_rootdir=""
 }
 
+# show configure usage
+_show_usage()
+{
+echo '
+Usage: '"$0"' [<options>...]
+Options: [defaults in brackets after descriptions]
+Configuration:
+  --help                  print this message
+  --version               only print version information
+  --verbose               display more information
+
+Directory and file names:
+  --prefix=PREFIX         install files in tree rooted at PREFIX
+                          ['"${xmake_sh_default_prefix}"']
+  --bindir=DIR            install binaries in PREFIX/DIR
+                          ['"${xmake_sh_default_bindir}"']
+'
+  exit 10
+}
+
+# parse input arguments
+while test $# != 0; do
+    case "$1" in
+    --help) _show_usage ;;
+    --) shift; break ;;
+    *) die "Unknown option: $1" ;;
+    esac
+    shift
+done
+
 # include xmake.sh file in root directory
 _includes_xmake_sh()
 {
