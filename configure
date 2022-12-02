@@ -237,6 +237,7 @@ option()
     _map_set "options" "${name}_name" "${name}"
     _map_set "options" "${name}_description" "${description}"
     _map_set "options" "${name}_default" "${default}"
+    return 0
 }
 _map "options"
 
@@ -322,9 +323,12 @@ target()
     if ! ${_loading_targets}; then
         return
     fi
-    echo "${1}" "${2}"
+    local name=${1}
+    _xmake_sh_targets="${_xmake_sh_targets} ${name}"
+    _map_set "targets" "${name}_name" "${name}"
     return 0
 }
+_map "targets"
 
 # set kind in target
 set_kind()
