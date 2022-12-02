@@ -361,17 +361,17 @@ echo '
 Usage: '"$0"' [<options>...]
 Options: [defaults in brackets after descriptions]
 Configuration:
-  --help                  print this message
-  --version               only print version information
-  --verbose               display more information
+  --help                  Print this message
+  --version               Only print version information
+  --verbose               Display more information
 
 Project configuration:
 '"`_show_options_usage`"'
 
 Directory and file names:
-  --prefix=PREFIX         install files in tree rooted at PREFIX
+  --prefix=PREFIX         Install files in tree rooted at PREFIX
                           ['"${xmake_sh_default_prefix}"']
-  --bindir=DIR            install binaries in PREFIX/DIR
+  --bindir=DIR            Install binaries in PREFIX/DIR
                           ['"${xmake_sh_default_bindir}"']
 '
   exit 10
