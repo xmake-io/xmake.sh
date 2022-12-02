@@ -805,7 +805,7 @@ _check_platform()
 # try program
 _toolchain_try_program()
 {
-    local name=${1}
+    local toolchain=${1}
     local kind=${2}
     local program=${3}
     _vprint "checking for ${program} ... ok"
@@ -815,13 +815,13 @@ _toolchain_try_program()
 # try toolset
 _toolchain_try_toolset()
 {
-    local name=${1}
+    local toolchain=${1}
     local kind=${2}
     local description=${3}
-    local programs=`_get_toolchain_toolset "${name}" "${kind}"`
+    local programs=`_get_toolchain_toolset "${toolchain}" "${kind}"`
     for program in ${programs}; do
-        if _toolchain_try_program "${name}" "${kind}" "${program}"; then
-            _set_toolchain_toolset "${name}" "${kind}" "${program}"
+        if _toolchain_try_program "${toolchain}" "${kind}" "${program}"; then
+            _set_toolchain_toolset "${toolchain}" "${kind}" "${program}"
             echo "checking for the ${description} (${kind}) ... ${program}"
             return 0
         fi
@@ -832,16 +832,16 @@ _toolchain_try_toolset()
 # try toolchain
 _toolchain_try()
 {
-    local name=${1}
-    _vprint "checking for $name toolchain ..."
-    if _toolchain_try_toolset "${name}" "cc" "c compiler" &&
-       _toolchain_try_toolset "${name}" "cxx" "c++ compiler" &&
-       _toolchain_try_toolset "${name}" "as" "assembler" &&
-       _toolchain_try_toolset "${name}" "mm" "objc compiler" &&
-       _toolchain_try_toolset "${name}" "mxx" "objc++ compiler" &&
-       _toolchain_try_toolset "${name}" "ld" "linker" &&
-       _toolchain_try_toolset "${name}" "ar" "static library archiver" &&
-       _toolchain_try_toolset "${name}" "sh" "shared library linker"; then
+    local toolchain=${1}
+    _vprint "checking for $toolchain toolchain ..."
+    if _toolchain_try_toolset "${toolchain}" "cc" "c compiler" &&
+       _toolchain_try_toolset "${toolchain}" "cxx" "c++ compiler" &&
+       _toolchain_try_toolset "${toolchain}" "as" "assembler" &&
+       _toolchain_try_toolset "${toolchain}" "mm" "objc compiler" &&
+       _toolchain_try_toolset "${toolchain}" "mxx" "objc++ compiler" &&
+       _toolchain_try_toolset "${toolchain}" "ld" "linker" &&
+       _toolchain_try_toolset "${toolchain}" "ar" "static library archiver" &&
+       _toolchain_try_toolset "${toolchain}" "sh" "shared library linker"; then
         return 0
     fi
     return 1
@@ -861,9 +861,9 @@ _toolchain_detect()
         mkdir ${xmake_sh_buildir}
     fi
 
-    for name in ${toolchains}; do
-        if _toolchain_try "$name"; then
-            _target_toolchain=${name}
+    for toolchain in ${toolchains}; do
+        if _toolchain_try "$toolchain"; then
+            _target_toolchain=${toolchain}
             break
         fi
     done
