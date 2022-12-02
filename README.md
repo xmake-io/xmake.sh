@@ -74,7 +74,11 @@ Xmake is a script-only build utility like autotools.
 - [x] Easy, similar configuration syntax to xmake
 - [x] Compatible with autotools, same usage
 
-### Project Syntax
+## New project
+
+Copy `./configure` script file to your project root directory.
+
+## Write project configuration
 
 We just write `xmake.sh` project file, like this:
 
@@ -101,14 +105,19 @@ if has_config "tests"; then
 fi
 ```
 
-### Configure and build
+## Configure and generate makefile
 
 ```console
 $ ./configure
+```
+
+## Build project
+
+```console
 $ make
 ```
 
-### Install project
+## Install project
 
 ```console
 $ make install

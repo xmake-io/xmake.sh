@@ -250,13 +250,41 @@ _has_option()
     return 1
 }
 
-# get the given option value
+# get the given option
 _get_option()
 {
     local name=${1}
     local key=${2}
     local value=`_map_get "options" "${name}_${key}"`
     echo ${value}
+}
+
+# set the given option
+_set_option()
+{
+    local name=${1}
+    local key=${2}
+    local value=${3}
+    _map_set "options" "${name}_${key}" "${value}"
+}
+
+# get the give option value
+_get_option_value()
+{
+    local name=${1}
+    local value=`_get_option "${name}" "value"`
+    if test "x${value}" = "x"; then
+        value=`_get_option "${name}" "default"`
+    fi
+    echo ${value}
+}
+
+# set the give option value
+_set_option_value()
+{
+    local name=${1}
+    local value=${2}
+    _set_option "${name}" "value" "${value}"
 }
 
 # is config for option
@@ -267,7 +295,7 @@ is_config()
     fi
     local name=${1}
     local value=${2}
-    local value_cur=`_get_option "${name}" "value"`
+    local value_cur=`_get_option_value "${name}"`
     if test "x${value_cur}" = "x${value}"; then
         return 0
     fi
@@ -281,7 +309,7 @@ has_config()
         return 1
     fi
     local name=${1}
-    local value_cur=`_get_option "${name}" "value"`
+    local value_cur=`_get_option_value "${name}"`
     if _is_enabled ${value_cur}; then
         return 0
     fi
@@ -455,7 +483,7 @@ _handle_option()
         _show_version
         return 0
     elif _has_option "${name}"; then
-        echo "${name}"
+        _set_option_value "${name}" "${value}"
         return 0
     fi
     return 1
