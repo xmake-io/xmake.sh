@@ -25,6 +25,7 @@ xmake_sh_projectdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 xmake_sh_buildir="${xmake_sh_projectdir}/build"
 xmake_sh_version="1.0"
 xmake_sh_verbose=false
+xmake_sh_diagnosis=false
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
 
 #-----------------------------------------------------------------------------
@@ -47,6 +48,13 @@ _tolower()
 _vprint()
 {
     if "${xmake_sh_verbose}"; then
+        echo "$@"
+    fi
+}
+
+_dprint()
+{
+    if "${xmake_sh_diagnosis}"; then
         echo "$@"
     fi
 }
@@ -85,6 +93,24 @@ _find() {
     else
         echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
     fi
+}
+
+# try run program
+_try_run_program()
+{
+    local program="${1}"
+    local argv="${2}"
+    if ${xmake_sh_diagnosis}; then
+        echo "try running: ${program}" "${argv}"
+        "${program}" "${argv}"
+    else
+        "${program}" "${argv}" >/dev/null 2>&1
+    fi
+    local ok=$?
+    if test "${ok}" -ne "0"; then
+        return 1
+    fi
+    return 0
 }
 
 #-----------------------------------------------------------------------------
@@ -694,6 +720,7 @@ Common options:
   --help                  Print this message.
   --version               Only print version information.
   --verbose               Display more information.
+  --diagnosis             Display lots of diagnosis information.
   --plat=PLAT             Compile for the given platform. (default: '"${_target_plat_default}"')
                               - msys
                               - cross
@@ -762,6 +789,9 @@ _handle_option()
     elif test "x${name}" = "xverbose"; then
         xmake_sh_verbose=true
         return 0
+    elif test "x${name}" = "xdiagnosis"; then
+        xmake_sh_diagnosis=true
+        return 0
     elif test "x${name}" = "xplat"; then
         _target_plat=${value}
         return 0
@@ -807,7 +837,10 @@ _toolchain_try_gcc()
 {
     local kind=${1}
     local program=${2}
-    return 0
+    if _try_run_program "${program}" "--version"; then
+        return 0
+    fi
+    return 1
 }
 
 # try clang
@@ -815,7 +848,10 @@ _toolchain_try_clang()
 {
     local kind=${1}
     local program=${2}
-    return 0
+    if _try_run_program "${program}" "--version"; then
+        return 0
+    fi
+    return 1
 }
 
 # try ar
