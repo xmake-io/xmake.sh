@@ -204,9 +204,16 @@ is_host()
 # detect host architecture
 os_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 
-# detect target platform and architecture
+# set the default target platform and architecture
 _target_plat=${os_host}
 _target_arch=${os_arch}
+
+# set the default target toolchain
+if is_host "macosx"; then
+    _target_toolchain="clang"
+else
+    _target_toolchain="gcc"
+fi
 
 # determining target platform
 # e.g.
@@ -225,13 +232,28 @@ is_plat()
 
 # determining target architecture
 # e.g.
-# if is_arch "linux" "macosx"; then
+# if is_arch "x86_64" "i386"; then
 #     ...
 # fi
 is_arch()
 {
     for arch in $@; do
         if test "x${_target_arch}" = "x${arch}"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# determining target toolchain
+# e.g.
+# if is_toolchain "clang"; then
+#     ...
+# fi
+is_toolchain()
+{
+    for toolchain in $@; do
+        if test "x${_target_toolchain}" = "x${toolchain}"; then
             return 0
         fi
     done
@@ -547,6 +569,9 @@ Common options:
                               - mingw: i386 x86_64 arm arm64
                               - macosx: x86_64 arm64
                               - linux: i386 x86_64 armv7 armv7s arm64-v8a mips mips64 mipsel mips64el
+  --toolchain=TOOLCHAIN   Set toolchain name. (default: '"${_target_toolchain}"')
+                              - clang
+                              - gcc
 
 Project options:
 '"`_show_options_usage`"'
@@ -601,6 +626,9 @@ _handle_option()
     elif test "x${name}" = "xarch"; then
         _target_arch=${value}
         return 0
+    elif test "x${name}" = "xtoolchain"; then
+        _target_toolchain=${value}
+        return 0
     elif _has_option "${name}"; then
         _set_option_value "${name}" "${value}"
         return 0
@@ -614,6 +642,27 @@ while test $# != 0; do
         _die "Unknown option: $1"
     fi
 done
+
+# check platform
+_check_platform()
+{
+    echo "checking for platform ... ${_target_plat}"
+    echo "checking for architecture ... ${_target_arch}"
+}
+
+# check toolchain
+_check_toolchain()
+{
+    echo "checking for toolchain ... ${_target_toolchain}"
+}
+
+# check all
+_check_all()
+{
+    _check_platform
+    _check_toolchain
+}
+_check_all
 
 # load targets
 _load_targets()
@@ -633,16 +682,3 @@ _load_targets()
 }
 _load_targets
 
-# check platform
-_check_platform()
-{
-    echo "checking for platform ... ${_target_plat}"
-    echo "checking for architecture ... ${_target_arch}"
-}
-
-# check all
-_check_all()
-{
-    _check_platform
-}
-_check_all
