@@ -46,6 +46,20 @@ _dupch()
     printf %${count}s | tr " " "${ch}"
 }
 
+# is enabled? true, yes, y
+_is_enabled()
+{
+    local value=${1}
+    if test "x${value}" = "xtrue"; then
+        return 0
+    elif test "x${value}" = "xyes"; then
+        return 0
+    elif test "x${value}" = "xy"; then
+        return 0
+    fi
+    return 1
+}
+
 # define map
 # _map "options"
 # _map_set "options" "key1" "value1"
@@ -225,13 +239,28 @@ option()
 }
 _map "options"
 
+# get the given option value
+_get_option()
+{
+    local name=${1}
+    local key=${2}
+    local value=`_map_get "options" "${name}_${key}"`
+    echo ${value}
+}
+
 # is config for option
 is_config()
 {
     if ! ${_loading_targets}; then
         return 1
     fi
-    return 0
+    local name=${1}
+    local value=${2}
+    local value_cur=`_get_option "${name}" "value"`
+    if test "x${value_cur}" = "x${value}"; then
+        return 0
+    fi
+    return 1
 }
 
 # has config for option
@@ -240,7 +269,12 @@ has_config()
     if ! ${_loading_targets}; then
         return 1
     fi
-    return 0
+    local name=${1}
+    local value_cur=`_get_option "${name}" "value"`
+    if _is_enabled ${value_cur}; then
+        return 0
+    fi
+    return 1
 }
 
 # define target
@@ -319,15 +353,6 @@ _load_options()
     fi
 }
 _load_options
-
-# get the given option value
-_get_option()
-{
-    local name=${1}
-    local key=${2}
-    local value=`_map_get "options" "${name}_${key}"`
-    echo ${value}
-}
 
 # show option usage
 _show_options_usage()
