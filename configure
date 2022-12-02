@@ -60,7 +60,8 @@ _is_enabled()
     return 1
 }
 
-# define map
+# define map, @note we can not use bash/declare to define map, because sh does not support it.
+#
 # _map "options"
 # _map_set "options" "key1" "value1"
 # _map_set "options" "key2" "value2"
