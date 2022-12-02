@@ -6,9 +6,6 @@
   <h1>xmake.sh</h1>
 
   <div>
-    <a href="https://github.com/xmake-io/xmake.sh/actions?query=workflow%3AWindows">
-      <img src="https://img.shields.io/github/workflow/status/xmake-io/xmake.sh/Windows/master.svg?style=flat-square&logo=windows" alt="github-ci" />
-    </a>
     <a href="https://github.com/xmake-io/xmake.sh/actions?query=workflow%3ALinux">
       <img src="https://img.shields.io/github/workflow/status/xmake-io/xmake.sh/Linux/master.svg?style=flat-square&logo=linux" alt="github-ci" />
     </a>
