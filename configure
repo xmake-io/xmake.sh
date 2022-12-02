@@ -68,6 +68,19 @@ _is_enabled()
     return 1
 }
 
+# find file in the given directory
+# e.g. _find . xmake.sh
+_find() {
+    local dir=${1}
+    local name=${2}
+    local depth=${3}
+    if is_host "macosx"; then
+        echo `find ${dir} -depth ${depth} -name "${name}"`
+    else
+        echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+    fi
+}
+
 #-----------------------------------------------------------------------------
 # map functions
 #
@@ -294,6 +307,10 @@ includes()
     done
 }
 
+#-----------------------------------------------------------------------------
+# option configuration apis
+#
+
 # define option
 option()
 {
@@ -390,6 +407,10 @@ has_config()
     fi
     return 1
 }
+
+#-----------------------------------------------------------------------------
+# target configuration apis
+#
 
 # define target
 target()
@@ -502,27 +523,122 @@ add_defines()
     done
 }
 
-# find file in the given directory
-# e.g. _find . xmake.sh
-_find() {
-    local dir=${1}
-    local name=${2}
-    local depth=${3}
-    if is_host "macosx"; then
-        echo `find ${dir} -depth ${depth} -name "${name}"`
+#-----------------------------------------------------------------------------
+# toolchain configuration apis
+#
+
+# define toolchain
+toolchain()
+{
+    if ! ${_loading_toolchains}; then
+        return
+    fi
+    local name=${1}
+    _xmake_sh_toolchain_current=${name}
+    _xmake_sh_toolchains="${_xmake_sh_toolchains} ${name}"
+    _map_set "toolchains" "${name}_name" "${name}"
+    return 0
+}
+toolchain_end()
+{
+    _xmake_sh_toolchain_current=""
+}
+_map "toolchains"
+
+# has the given toolchain?
+_has_toolchain()
+{
+    local name=${1}
+    if _map_has "toolchains" "${name}_name"; then
+        return 0
+    fi
+    return 1
+}
+
+# get the given toolchain item
+_get_toolchain_item()
+{
+    local name=${1}
+    local key=${2}
+    local value=`_map_get "toolchains" "${name}_${key}"`
+    echo ${value}
+}
+
+# set the given toolchain item
+_set_toolchain_item()
+{
+    local name=${1}
+    local key=${2}
+    local value=${3}
+    if test "x${name}" != "x"; then
+        _map_set "toolchains" "${name}_${key}" "${value}"
     else
-        echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+        _die "please set toolchain in the toolchain scope!"
     fi
 }
+
+# get the give toolchain toolset
+_get_toolchain_toolset()
+{
+    local name=${1}
+    local kind=${2}
+    local programs=`_get_toolchain_item "${name}" "toolset_${kind}" `
+    echo ${programs}
+}
+
+# set the give toolchain toolset
+_set_toolchain_toolset()
+{
+    local name=${1}
+    local kind=${2}
+    local programs=${3}
+    _set_toolchain_item "${name}" "toolset_${kind}" "${programs}"
+}
+
+# set toolset in toolchain
+set_toolset()
+{
+    if ! ${_loading_toolchains}; then
+        return
+    fi
+    local kind=${1}
+    local programs=${2}
+    _set_toolchain_toolset "${_xmake_sh_toolchain_current}" "${kind}" "${programs}"
+}
+
+# clang toolchain
+toolchain "clang"
+    set_toolset "as" "clang"
+    set_toolset "cc" "clang"
+    set_toolset "cxx" "clang clang++"
+    set_toolset "mm" "clang"
+    set_toolset "mxx" "clang clang++"
+    set_toolset "ld" "clang++ clang"
+    set_toolset "sh" "clang++ clang"
+    set_toolset "ar" "ar"
+toolchain_end
+
+# gcc toolchain
+toolchain "gcc"
+    set_toolset "as" "gcc"
+    set_toolset "cc" "gcc"
+    set_toolset "cxx" "gcc g++"
+    set_toolset "mm" "gcc"
+    set_toolset "mxx" "gcc g++"
+    set_toolset "ld" "g++ gcc"
+    set_toolset "sh" "g++ gcc"
+    set_toolset "ar" "ar"
+toolchain_end
 
 #-----------------------------------------------------------------------------
 # load options
 #
 
-# load options
-_load_options()
+# load options and toolchains
+_load_options_and_toolchains()
 {
     _loading_options=true
+    _loading_toolchains=true
     _loading_targets=false
     local file=${xmake_sh_projectdir}/xmake.sh
     if test -f "${file}"; then
@@ -535,7 +651,7 @@ _load_options()
         done
     fi
 }
-_load_options
+_load_options_and_toolchains
 
 # show option usage
 _show_options_usage()
@@ -683,6 +799,13 @@ _check_platform()
 # detect toolchain
 _toolchain_try()
 {
+    local name=${1}
+    local cc=`_get_toolchain_toolset ${name} "cc"`
+    local cxx=`_get_toolchain_toolset ${name} "cxx"`
+    local ld=`_get_toolchain_toolset ${name} "ld"`
+    echo "try ${name}:${cc}"
+    echo "try ${name}:${cxx}"
+    echo "try ${name}:${ld}"
     return 1
 }
 _toolchain_detect()
@@ -736,6 +859,7 @@ _check_all
 _load_targets()
 {
     _loading_options=false
+    _loading_toolchains=false
     _loading_targets=true
     local file=${xmake_sh_projectdir}/xmake.sh
     if test -f "${file}"; then
