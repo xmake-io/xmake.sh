@@ -37,6 +37,15 @@ _tolower()
     echo "$1" | tr '[A-Z]' '[a-z]'
 }
 
+# duplicate characters
+# e.g. _dupch 10 "." => ...........
+_dupch()
+{
+    local count=${1}
+    local ch=${2}
+    printf %${count}s | tr " " "${ch}"
+}
+
 # define map
 # _map "options"
 # _map_set "options" "key1" "value1"
@@ -310,14 +319,40 @@ _load_options()
     fi
 }
 _load_options
-echo "load options done"
-for name in ${_xmake_sh_options}; do
-    echo "${name}"
-    description=`_map_get "options" "${name}_description"`
-    default=`_map_get "options" "${name}_default"`
-    echo "description: ${description}"
-    echo "default: ${default}"
-done
+
+# get the given option value
+_get_option()
+{
+    local name=${1}
+    local key=${2}
+    local value=`_map_get "options" "${name}_${key}"`
+    echo ${value}
+}
+
+# show option usage
+_show_options_usage()
+{
+    for name in ${_xmake_sh_options}; do
+        local description=`_get_option "${name}" "description"`
+        local default=`_get_option "${name}" "default"`
+        local head="--${name}=`_toupper ${name}`"
+        local headsize=${#head}
+        local tail="${description}"
+        if test "x${default}" != "x"; then
+            local defval=${default}
+            if test "x${defval}" = "xtrue"; then
+                defval="yes"
+            elif test "x${defval}" = "xfalse"; then
+                defval="no"
+            fi
+            tail="${tail} (${defval})"
+        fi
+        local width=24
+        local padding_width=$((${width} - ${headsize}))
+        local padding=`_dupch ${padding_width} " "`
+        echo "  ${head}${padding}${tail}"
+    done
+}
 
 # show configure usage
 _show_usage()
@@ -329,6 +364,9 @@ Configuration:
   --help                  print this message
   --version               only print version information
   --verbose               display more information
+
+Project configuration:
+'"`_show_options_usage`"'
 
 Directory and file names:
   --prefix=PREFIX         install files in tree rooted at PREFIX
