@@ -111,7 +111,7 @@ _map_set()
         keys="${keys} ${key}"
         eval _map_${name}_keys=\${keys}
     fi
-    eval _map_${name}_value_${key}=${value}
+    eval _map_${name}_value_${key}=\${value}
 }
 
 _map_remove()
@@ -139,30 +139,6 @@ _map_keys()
     local keys=$(eval echo \$_map_${name}_keys)
     echo ${keys}
 }
-
-_map "options"
-_map_set "options" "key1" "value1"
-_map_set "options" "key2" "value2"
-_map_set "options" "key2" "value3"
-_map_set "options" "key3" "value3"
-_map_set "options" "key4" "__empty__"
-_map_set "options" "key4" "__empty__"
-_count=`_map_count "options"`
-_keys=`_map_keys "options"`
-echo ${_count}
-for key in ${_keys}; do
-    value=`_map_get "options" ${key}`
-    echo ${key} "->" ${value}
-done
-echo "------"
-_map_remove "options" "key3"
-_count=`_map_count "options"`
-_keys=`_map_keys "options"`
-echo ${_count}
-for key in ${_keys}; do
-    value=`_map_get "options" ${key}`
-    echo ${key} "->" ${value}
-done
 
 # detect hosts
 os_host=`uname`
@@ -231,10 +207,14 @@ option()
     if ! ${_loading_options}; then
         return
     fi
-    xmake_sh_option_names="${xmake_sh_option_names} ${1}"
-    xmake_sh_option_descriptions="${xmake_sh_option_descriptions} ${2}"
-    xmake_sh_option_defaults="${xmake_sh_option_defaults} ${3}"
+    local name=${1}
+    local description=${2}
+    local default=${3}
+    _xmake_sh_options="${_xmake_sh_options} ${name}"
+    _map_set "options" "${name}_description" "${description}"
+    _map_set "options" "${name}_default" "${default}"
 }
+_map "options"
 
 # is config for option
 is_config()
@@ -331,6 +311,13 @@ _load_options()
 }
 _load_options
 echo "load options done"
+for name in ${_xmake_sh_options}; do
+    echo "${name}"
+    description=`_map_get "options" "${name}_description"`
+    default=`_map_get "options" "${name}_default"`
+    echo "description: ${description}"
+    echo "default: ${default}"
+done
 
 # show configure usage
 _show_usage()
