@@ -22,7 +22,10 @@
 # some constants
 #
 xmake_sh_projectdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
+xmake_sh_buildir="${xmake_sh_projectdir}/build"
+xmake_sh_logfile="${xmake_sh_buildir}/configure.log"
 xmake_sh_version="1.0"
+xmake_sh_verbose=false
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
 
 #-----------------------------------------------------------------------------
@@ -220,13 +223,6 @@ os_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 # set the default target platform and architecture
 _target_plat_default=${os_host}
 _target_arch_default=${os_arch}
-
-# set the default target toolchain
-if is_host "macosx"; then
-    _target_toolchain_default="clang"
-else
-    _target_toolchain_default="gcc"
-fi
 
 # determining target platform
 # e.g.
@@ -590,7 +586,7 @@ Common options:
                               - mingw: i386 x86_64 arm arm64
                               - macosx: x86_64 arm64
                               - linux: i386 x86_64 armv7 armv7s arm64-v8a mips mips64 mipsel mips64el
-  --toolchain=TOOLCHAIN   Set toolchain name. (default: '"${_target_toolchain_default}"')
+  --toolchain=TOOLCHAIN   Set toolchain name.
                               - clang
                               - gcc
 
@@ -641,6 +637,9 @@ _handle_option()
     elif test "x${name}" = "xversion"; then
         _show_version
         return 0
+    elif test "x${name}" = "xverbose"; then
+        xmake_sh_verbose=true
+        return 0
     elif test "x${name}" = "xplat"; then
         _target_plat=${value}
         return 0
@@ -681,13 +680,44 @@ _check_platform()
     echo "checking for architecture ... ${_target_arch}"
 }
 
+# detect toolchain
+_toolchain_try()
+{
+    return 1
+}
+_toolchain_detect()
+{
+    local _toolchains=""
+    if is_plat "macosx"; then
+        _toolchains="clang gcc"
+    else
+        _toolchains="gcc clang"
+    fi
+
+    if test ! -d ${xmake_sh_buildir}; then
+        mkdir ${xmake_sh_buildir}
+    fi
+
+    _toolchain=
+    for name in ${_toolchains}; do
+        echo "checking for $name toolchain" >> ${xmake_sh_logfile} 2>&1
+        _toolchain_try "$name" && break
+    done
+    echo ${_toolchain}
+}
+
 # check toolchain
 _check_toolchain()
 {
     if test "x${_target_toolchain}" = "x"; then
-        _target_toolchain=${_target_toolchain_default}
+        _target_toolchain=`_toolchain_detect`
     fi
-    echo "checking for toolchain ... ${_target_toolchain}"
+    if test "x${_target_toolchain}" != "x"; then
+        echo "checking for toolchain ... ${_target_toolchain}"
+    else
+        echo "checking for toolchain ... no"
+        _die "toolchain not found!"
+    fi
 }
 
 # check all

@@ -1,6 +1,7 @@
 # Xmake cache
 .xmake/
 build/
+configure.log
 
 # Makefile
 Makefile
