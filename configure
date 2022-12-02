@@ -802,14 +802,55 @@ _check_platform()
     echo "checking for architecture ... ${_target_arch}"
 }
 
+# try gcc
+_toolchain_try_gcc()
+{
+    local kind=${1}
+    local program=${2}
+    return 0
+}
+
+# try clang
+_toolchain_try_clang()
+{
+    local kind=${1}
+    local program=${2}
+    return 0
+}
+
+# try ar
+_toolchain_try_ar()
+{
+    local kind=${1}
+    local program=${2}
+    return 0
+}
+
 # try program
 _toolchain_try_program()
 {
     local toolchain=${1}
     local kind=${2}
     local program=${3}
-    _vprint "checking for ${program} ... ok"
-    return 0
+    local ok=false
+    local filename=`basename "${program}"`
+    case "${filename}" in
+        *-gcc) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
+        gcc) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
+        *-g++) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
+        g++) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
+        *-clang*) _toolchain_try_clang "${kind}" "${program}" && ok=true;;
+        clang*) _toolchain_try_clang "${kind}" "${program}" && ok=true;;
+        *-ar) _toolchain_try_ar "${kind}" "${program}" && ok=true;;
+        ar) _toolchain_try_ar "${kind}" "${program}" && ok=true;;
+        *) _die "unknown program(${program}) for kind(${kind}) in toolchain(${toolchain})!" ;;
+    esac
+    if ${ok}; then
+        _vprint "checking for ${program} ... ok"
+        return 0
+    fi
+    _vprint "checking for ${program} ... no"
+    return 1
 }
 
 # try toolset
