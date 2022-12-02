@@ -431,11 +431,23 @@ _show_version()
     exit 2
 }
 
+# --foo=yes => foo
+_parse_argument_name()
+{
+    echo "${1#*--}" | sed "s/${2-=[^=]*}$//"
+}
+
+# --foo=yes => yes
+_parse_argument_value()
+{
+    echo "$1" | sed "s/^${2-[^=]*=}//"
+}
+
 # parse input arguments
 _handle_option()
 {
-    local name=${1}
-    name=${name#*--}
+    local name=`_parse_argument_name ${1}`
+    local value=`_parse_argument_value ${1}`
     if test "x${name}" = "xhelp"; then
         _show_usage
         return 0
