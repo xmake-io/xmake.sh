@@ -919,7 +919,7 @@ _toolchain_try_clang()
     return 1
 }
 
-# try ar
+# TODO try ar
 _toolchain_try_ar()
 {
     local kind=${1}
