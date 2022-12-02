@@ -107,7 +107,7 @@ target "demo"
     if has_config "debug"; then
         add_defines "DEBUG"
     fi
-    if is_host "linux" "macosx"; then
+    if is_plat "linux" "macosx"; then
         add_defines "POSIX"
     fi
 

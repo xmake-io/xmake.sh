@@ -204,6 +204,40 @@ is_host()
 # detect host architecture
 os_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 
+# detect target platform and architecture
+_target_plat=${os_host}
+_target_arch=${os_arch}
+
+# determining target platform
+# e.g.
+# if is_plat "linux" "macosx"; then
+#     ...
+# fi
+is_plat()
+{
+    for plat in $@; do
+        if test "x${_target_plat}" = "x${plat}"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# determining target architecture
+# e.g.
+# if is_arch "linux" "macosx"; then
+#     ...
+# fi
+is_arch()
+{
+    for arch in $@; do
+        if test "x${_target_arch}" = "x${arch}"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 # include the given xmake.sh file or directory
 # e.g. includes "src" "tests"
 includes()
@@ -480,7 +514,7 @@ _show_options_usage()
             elif test "x${defval}" = "xfalse"; then
                 defval="no"
             fi
-            tail="${tail} (${defval})"
+            tail="${tail} (default: ${defval})"
         fi
         local width=24
         local padding_width=$((${width} - ${headsize}))
@@ -495,19 +529,27 @@ _show_usage()
 echo '
 Usage: '"$0"' [<options>...]
 Options: [defaults in brackets after descriptions]
-Configuration:
-  --help                  Print this message
-  --version               Only print version information
-  --verbose               Display more information
+Common options:
+  --help                  Print this message.
+  --version               Only print version information.
+  --verbose               Display more information.
+  --plat=PLAT             Compile for the given platform. (default: '"${_target_plat}"')
+                              - msys
+                              - cross
+                              - bsd
+                              - mingw
+                              - macosx
+                              - linux
+  --arch=ARCH             Compile for the given architecture. (default: '"${_target_arch}"')
+                              - msys: i386 x86_64
+                              - cross: i386 x86_64 arm arm64 mips mips64 riscv riscv64 s390x ppc ppc64 sh4
+                              - bsd: i386 x86_64
+                              - mingw: i386 x86_64 arm arm64
+                              - macosx: x86_64 arm64
+                              - linux: i386 x86_64 armv7 armv7s arm64-v8a mips mips64 mipsel mips64el
 
-Project configuration:
+Project options:
 '"`_show_options_usage`"'
-
-Directory and file names:
-  --prefix=PREFIX         Install files in tree rooted at PREFIX
-                          ['"${xmake_sh_default_prefix}"']
-  --bindir=DIR            Install binaries in PREFIX/DIR
-                          ['"${xmake_sh_default_bindir}"']
 '
     exit 1
 }
@@ -553,6 +595,12 @@ _handle_option()
     elif test "x${name}" = "xversion"; then
         _show_version
         return 0
+    elif test "x${name}" = "xplat"; then
+        _target_plat=${value}
+        return 0
+    elif test "x${name}" = "xarch"; then
+        _target_arch=${value}
+        return 0
     elif _has_option "${name}"; then
         _set_option_value "${name}" "${value}"
         return 0
@@ -585,3 +633,16 @@ _load_targets()
 }
 _load_targets
 
+# check platform
+_check_platform()
+{
+    echo "checking for platform ... ${_target_plat}"
+    echo "checking for architecture ... ${_target_arch}"
+}
+
+# check all
+_check_all()
+{
+    _check_platform
+}
+_check_all
