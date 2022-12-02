@@ -858,22 +858,38 @@ _toolchain_try_make()
 # try gcc
 _toolchain_try_gcc()
 {
+    if test "x${_toolchain_try_gcc_result}" = "xok"; then
+        return 0
+    elif test "x${_toolchain_try_gcc_result}" = "xno"; then
+        return 1
+    fi
+
     local kind=${1}
     local program=${2}
     if _try_run_program "${program}" "--version"; then
+        _toolchain_try_gcc_result="ok"
         return 0
     fi
+    _toolchain_try_gcc_result="no"
     return 1
 }
 
 # try clang
 _toolchain_try_clang()
 {
+    if test "x${_toolchain_try_clang_result}" = "xok"; then
+        return 0
+    elif test "x${_toolchain_try_clang_result}" = "xno"; then
+        return 1
+    fi
+
     local kind=${1}
     local program=${2}
     if _try_run_program "${program}" "--version"; then
+        _toolchain_try_clang_result="ok"
         return 0
     fi
+    _toolchain_try_clang_result="no"
     return 1
 }
 
