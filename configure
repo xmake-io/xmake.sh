@@ -37,10 +37,37 @@ _tolower()
     echo "$1" | tr '[A-Z]' '[a-z]'
 }
 
-_map_declare()
+# define map
+# _map "options"
+# _map_set "options" "key1" "value1"
+# _map_set "options" "key2" "value2"
+# _map_set "options" "key2" "value3"
+# _map_set "options" "key3" "value3"
+# _map_set "options" "key4" "__empty__"
+# _map_set "options" "key4" "__empty__"
+# _count=`_map_count "options"`
+# _keys=`_map_keys "options"`
+# echo ${_count}
+# for key in ${_keys}; do
+#     value=`_map_get "options" ${key}`
+#     echo ${key} "->" ${value}
+# done
+#
+# echo "------"
+# _map_remove "options" "key3"
+# _count=`_map_count "options"`
+# _keys=`_map_keys "options"`
+# echo ${_count}
+# for key in ${_keys}; do
+#     value=`_map_get "options" ${key}`
+#     echo ${key} "->" ${value}
+# done
+#
+_map()
 {
     local name=${1}
     eval _map_${name}_count=0
+    eval _map_${name}_keys=""
 }
 
 _map_count()
@@ -50,15 +77,92 @@ _map_count()
     echo ${count}
 }
 
-_map_declare "options"
-_count=`_map_count "options"`
-echo ${_count}
+_map_get()
+{
+    local name=${1}
+    local key=${2}
+    local value=$(eval echo \$_map_${name}_value_${key})
+    if test "x${value}" = "x__empty__"; then
+        value=""
+    fi
+    echo ${value}
+}
 
-#y=cat
-#eval x$y=9
-#p=$(eval echo \$x$y)
-#echo $p
-#echo $xcat
+_map_has()
+{
+    local name=${1}
+    local key=${2}
+    local value=$(eval echo \$_map_${name}_value_${key})
+    if test "x${value}" != "x"; then
+        return 0
+    fi
+    return 1
+}
+
+_map_set()
+{
+    local name=${1}
+    local key=${2}
+    local value=${3}
+    if ! _map_has ${name} ${key}; then
+        local count=`_map_count "options"`
+        eval _map_${name}_count=$((${count} + 1))
+        local keys=$(eval echo \$_map_${name}_keys)
+        keys="${keys} ${key}"
+        eval _map_${name}_keys=\${keys}
+    fi
+    eval _map_${name}_value_${key}=${value}
+}
+
+_map_remove()
+{
+    local name=${1}
+    local key=${2}
+    if _map_has ${name} ${key}; then
+        local count=`_map_count "options"`
+        eval _map_${name}_count=$((${count} - 1))
+        eval _map_${name}_value_${key}=""
+        local keys=$(eval echo \$_map_${name}_keys)
+        local keys_new=""
+        for k in ${keys}; do
+            if test "x${k}" != "x${key}"; then
+                keys_new="${keys_new} ${k}"
+            fi
+        done
+        eval _map_${name}_keys=\${keys_new}
+    fi
+}
+
+_map_keys()
+{
+    local name=${1}
+    local keys=$(eval echo \$_map_${name}_keys)
+    echo ${keys}
+}
+
+_map "options"
+_map_set "options" "key1" "value1"
+_map_set "options" "key2" "value2"
+_map_set "options" "key2" "value3"
+_map_set "options" "key3" "value3"
+_map_set "options" "key4" "__empty__"
+_map_set "options" "key4" "__empty__"
+_count=`_map_count "options"`
+_keys=`_map_keys "options"`
+echo ${_count}
+for key in ${_keys}; do
+    value=`_map_get "options" ${key}`
+    echo ${key} "->" ${value}
+done
+echo "------"
+_map_remove "options" "key3"
+_count=`_map_count "options"`
+_keys=`_map_keys "options"`
+echo ${_count}
+for key in ${_keys}; do
+    value=`_map_get "options" ${key}`
+    echo ${key} "->" ${value}
+done
 
 # detect hosts
 os_host=`uname`
