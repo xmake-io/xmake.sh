@@ -69,10 +69,22 @@ This gives you access to the [xmake-io/technical-support](https://github.com/xma
 
 Xmake is a script-only build utility like autotools.
 
+### Advantages
+
 - [x] No any dependencies
 - [x] No installation, only one shell script file
 - [x] Easy, similar configuration syntax to xmake
 - [x] Compatible with autotools, same usage
+
+### Supported features
+
+- [x] Generate makefile
+
+### In the future it will support
+
+- [ ] Generate build.ninja
+- [ ] Detect options, code snippet, dependencies, compiler features
+- [ ] Support more xmake features
 
 ## New project
 
