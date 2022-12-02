@@ -19,7 +19,7 @@
 #
 
 # init some constants
-xmake_sh_rootdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
+xmake_sh_projectdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 xmake_sh_version="1.0"
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
 
@@ -37,6 +37,23 @@ _tolower()
     echo "$1" | tr '[A-Z]' '[a-z]'
 }
 
+_map_declare()
+{
+    local name=${1}
+    eval _map_${name}_count=0
+}
+
+_map_count()
+{
+    local name=${1}
+    local count=$(eval echo \$_map_${name}_count)
+    echo ${count}
+}
+
+_map_declare "options"
+_count=`_map_count "options"`
+echo ${_count}
+
 #y=cat
 #eval x$y=9
 #p=$(eval echo \$x$y)
@@ -44,25 +61,25 @@ _tolower()
 #echo $xcat
 
 # detect hosts
-xmake_sh_host=`uname`
-xmake_sh_host=`_tolower ${xmake_sh_host}`
-if echo "${xmake_sh_host}" | grep cygwin >/dev/null 2>&1; then
-    xmake_sh_host="cygwin"
+os_host=`uname`
+os_host=`_tolower ${os_host}`
+if echo "${os_host}" | grep cygwin >/dev/null 2>&1; then
+    os_host="cygwin"
 fi
-if echo "${xmake_sh_host}" | grep msys >/dev/null 2>&1; then
-    xmake_sh_host="msys"
+if echo "${os_host}" | grep msys >/dev/null 2>&1; then
+    os_host="msys"
 fi
-if echo "${xmake_sh_host}" | grep darwin >/dev/null 2>&1; then
-    xmake_sh_host="macosx"
+if echo "${os_host}" | grep darwin >/dev/null 2>&1; then
+    os_host="macosx"
 fi
-if echo "${xmake_sh_host}" | grep linux >/dev/null 2>&1; then
-    xmake_sh_host="linux"
+if echo "${os_host}" | grep linux >/dev/null 2>&1; then
+    os_host="linux"
 fi
-if echo "${xmake_sh_host}" | grep freebsd >/dev/null 2>&1; then
-    xmake_sh_host="freebsd"
+if echo "${os_host}" | grep freebsd >/dev/null 2>&1; then
+    os_host="freebsd"
 fi
-if echo "${xmake_sh_host}" | grep bsd >/dev/null 2>&1; then
-    xmake_sh_host="bsd"
+if echo "${os_host}" | grep bsd >/dev/null 2>&1; then
+    os_host="bsd"
 fi
 
 # determining host
@@ -73,7 +90,7 @@ fi
 is_host()
 {
     for host in $@; do
-        if test "x${xmake_sh_host}" = "x${host}"; then
+        if test "x${os_host}" = "x${host}"; then
             return 0
         fi
     done
@@ -81,22 +98,7 @@ is_host()
 }
 
 # detect host architecture
-xmake_sh_hostarch=`uname -m | tr '[A-Z]' '[a-z]'`
-
-# determining host architecture
-# e.g.
-# if is_hostarch "x86_64" "i386"; then
-#     ...
-# fi
-is_hostarch()
-{
-    for arch in $@; do
-        if test "x${xmake_sh_hostarch}" = "x${arch}"; then
-            return 0
-        fi
-    done
-    return 1
-}
+os_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 
 # include the given xmake.sh file or directory
 # e.g. includes "src" "tests"
@@ -104,17 +106,17 @@ includes()
 {
     for path in $@; do
         if test -f "${path}"; then
-            _includes_rootdir=$(dirname -- "${path}")
+            xmake_sh_scriptdir=$(dirname -- "${path}")
             . "${path}"
         else
-            local _includes_rootdir_cur=${_includes_rootdir}
-            if test "x${_includes_rootdir}" != "x"; then
-                _includes_rootdir="${_includes_rootdir_cur}/${path}"
-                . "${_includes_rootdir}/xmake.sh"
+            local xmake_sh_scriptdir_cur=${xmake_sh_scriptdir}
+            if test "x${xmake_sh_scriptdir}" != "x"; then
+                xmake_sh_scriptdir="${xmake_sh_scriptdir_cur}/${path}"
+                . "${xmake_sh_scriptdir}/xmake.sh"
             else
-                . "${xmake_sh_rootdir}/${path}/xmake.sh"
+                . "${xmake_sh_projectdir}/${path}/xmake.sh"
             fi
-            _includes_rootdir=${_includes_rootdir_cur}
+            xmake_sh_scriptdir=${xmake_sh_scriptdir_cur}
         fi
     done
 }
@@ -212,12 +214,12 @@ _load_options()
 {
     _loading_options=true
     _loading_targets=false
-    local file=${xmake_sh_rootdir}/xmake.sh
+    local file=${xmake_sh_projectdir}/xmake.sh
     if test -f "${file}"; then
         includes "${file}"
     else
         # include all xmake.sh files in next sub-directories
-        local files=`find ${xmake_sh_rootdir} -maxdepth 2 -mindepth 2 -name "xmake.sh"`
+        local files=`find ${xmake_sh_projectdir} -maxdepth 2 -mindepth 2 -name "xmake.sh"`
         for file in ${files}; do
             includes "${file}"
         done
@@ -270,12 +272,12 @@ _load_targets()
 {
     _loading_options=false
     _loading_targets=true
-    local file=${xmake_sh_rootdir}/xmake.sh
+    local file=${xmake_sh_projectdir}/xmake.sh
     if test -f "${file}"; then
         includes "${file}"
     else
         # include all xmake.sh files in next sub-directories
-        local files=`_find "${xmake_sh_rootdir}" "xmake.sh" 2`
+        local files=`_find "${xmake_sh_projectdir}" "xmake.sh" 2`
         for file in ${files}; do
             includes "${file}"
         done
