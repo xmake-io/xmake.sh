@@ -23,7 +23,6 @@
 #
 xmake_sh_projectdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 xmake_sh_buildir="${xmake_sh_projectdir}/build"
-xmake_sh_logfile="${xmake_sh_buildir}/configure.log"
 xmake_sh_version="1.0"
 xmake_sh_verbose=false
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
@@ -43,6 +42,13 @@ _toupper()
 _tolower()
 {
     echo "$1" | tr '[A-Z]' '[a-z]'
+}
+
+_vprint()
+{
+    if "${xmake_sh_verbose}"; then
+        echo "$@"
+    fi
 }
 
 # duplicate characters
@@ -591,7 +597,7 @@ _set_toolchain_toolset()
 {
     local name=${1}
     local kind=${2}
-    local programs=${3}
+    local programs="${3}"
     _set_toolchain_item "${name}" "toolset_${kind}" "${programs}"
 }
 
@@ -602,7 +608,7 @@ set_toolset()
         return
     fi
     local kind=${1}
-    local programs=${2}
+    local programs="${2}"
     _set_toolchain_toolset "${_xmake_sh_toolchain_current}" "${kind}" "${programs}"
 }
 
@@ -796,45 +802,81 @@ _check_platform()
     echo "checking for architecture ... ${_target_arch}"
 }
 
-# detect toolchain
+# try program
+_toolchain_try_program()
+{
+    local name=${1}
+    local kind=${2}
+    local program=${3}
+    _vprint "checking for ${program} ... ok"
+    return 0
+}
+
+# try toolset
+_toolchain_try_toolset()
+{
+    local name=${1}
+    local kind=${2}
+    local description=${3}
+    local programs=`_get_toolchain_toolset "${name}" "${kind}"`
+    for program in ${programs}; do
+        if _toolchain_try_program "${name}" "${kind}" "${program}"; then
+            _set_toolchain_toolset "${name}" "${kind}" "${program}"
+            echo "checking for the ${description} (${kind}) ... ${program}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# try toolchain
 _toolchain_try()
 {
     local name=${1}
-    local cc=`_get_toolchain_toolset ${name} "cc"`
-    local cxx=`_get_toolchain_toolset ${name} "cxx"`
-    local ld=`_get_toolchain_toolset ${name} "ld"`
-    echo "try ${name}:${cc}"
-    echo "try ${name}:${cxx}"
-    echo "try ${name}:${ld}"
+    _vprint "checking for $name toolchain ..."
+    if _toolchain_try_toolset "${name}" "cc" "c compiler" &&
+       _toolchain_try_toolset "${name}" "cxx" "c++ compiler" &&
+       _toolchain_try_toolset "${name}" "as" "assembler" &&
+       _toolchain_try_toolset "${name}" "mm" "objc compiler" &&
+       _toolchain_try_toolset "${name}" "mxx" "objc++ compiler" &&
+       _toolchain_try_toolset "${name}" "ld" "linker" &&
+       _toolchain_try_toolset "${name}" "ar" "static library archiver" &&
+       _toolchain_try_toolset "${name}" "sh" "shared library linker"; then
+        return 0
+    fi
     return 1
 }
 _toolchain_detect()
 {
-    local _toolchains=""
-    if is_plat "macosx"; then
-        _toolchains="clang gcc"
-    else
-        _toolchains="gcc clang"
+    local toolchains="${1}"
+    if test "x${toolchains}" = "x"; then
+        if is_plat "macosx"; then
+            toolchains="clang gcc"
+        else
+            toolchains="gcc clang"
+        fi
     fi
 
     if test ! -d ${xmake_sh_buildir}; then
         mkdir ${xmake_sh_buildir}
     fi
 
-    _toolchain=
-    for name in ${_toolchains}; do
-        echo "checking for $name toolchain" >> ${xmake_sh_logfile} 2>&1
-        _toolchain_try "$name" && break
+    for name in ${toolchains}; do
+        if _toolchain_try "$name"; then
+            _target_toolchain=${name}
+            break
+        fi
     done
-    echo ${_toolchain}
 }
 
 # check toolchain
 _check_toolchain()
 {
-    if test "x${_target_toolchain}" = "x"; then
-        _target_toolchain=`_toolchain_detect`
-    fi
+    # detect toolchain
+    local toolchain=${_target_toolchain}
+    _target_toolchain=""
+    _toolchain_detect ${toolchain}
+
     if test "x${_target_toolchain}" != "x"; then
         echo "checking for toolchain ... ${_target_toolchain}"
     else
