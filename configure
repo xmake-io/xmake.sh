@@ -18,11 +18,16 @@
 # @author      ruki
 #
 
-# init some constants
+#-----------------------------------------------------------------------------
+# some constants
+#
 xmake_sh_projectdir=$(X= cd -- "$(dirname -- "$0")" && pwd -P)
 xmake_sh_version="1.0"
 xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
 
+#-----------------------------------------------------------------------------
+# some helper functions
+#
 _die() {
     echo "$@" 1>&2 ; exit 1
 }
@@ -59,6 +64,10 @@ _is_enabled()
     fi
     return 1
 }
+
+#-----------------------------------------------------------------------------
+# map functions
+#
 
 # define map, @note we can not use bash/declare to define map, because sh does not support it.
 #
@@ -164,6 +173,10 @@ _map_keys()
     echo ${keys}
 }
 
+#-----------------------------------------------------------------------------
+# detect default environments
+#
+
 # detect hosts
 os_host=`uname`
 os_host=`_tolower ${os_host}`
@@ -259,6 +272,10 @@ is_toolchain()
     done
     return 1
 }
+
+#-----------------------------------------------------------------------------
+# project configuration apis
+#
 
 # include the given xmake.sh file or directory
 # e.g. includes "src" "tests"
@@ -502,6 +519,10 @@ _find() {
     fi
 }
 
+#-----------------------------------------------------------------------------
+# load options
+#
+
 # load options
 _load_options()
 {
@@ -643,6 +664,10 @@ while test $# != 0; do
     fi
 done
 
+#-----------------------------------------------------------------------------
+# detect platform and toolchains
+#
+
 # check platform
 _check_platform()
 {
@@ -672,6 +697,10 @@ _check_all()
     _check_toolchain
 }
 _check_all
+
+#-----------------------------------------------------------------------------
+# load project targets
+#
 
 # load targets
 _load_targets()
