@@ -8,7 +8,7 @@ target "demo"
     add_deps "foo" "bar"
     add_files "main.cpp"
     if has_config "debug"; then
-        add_defines "DEBUG"
+        add_defines "DEBUG" "TEST"
     fi
     if is_host "linux" "macosx"; then
         add_defines "POSIX"

@@ -251,8 +251,8 @@ _has_option()
     return 1
 }
 
-# get the given option
-_get_option()
+# get the given option item
+_get_option_item()
 {
     local name=${1}
     local key=${2}
@@ -260,22 +260,26 @@ _get_option()
     echo ${value}
 }
 
-# set the given option
-_set_option()
+# set the given option item
+_set_option_item()
 {
     local name=${1}
     local key=${2}
     local value=${3}
-    _map_set "options" "${name}_${key}" "${value}"
+    if test "x${name}" != "x"; then
+        _map_set "options" "${name}_${key}" "${value}"
+    else
+        _die "please set option in the option scope!"
+    fi
 }
 
 # get the give option value
 _get_option_value()
 {
     local name=${1}
-    local value=`_get_option "${name}" "value"`
+    local value=`_get_option_item "${name}" "value"`
     if test "x${value}" = "x"; then
-        value=`_get_option "${name}" "default"`
+        value=`_get_option_item "${name}" "default"`
     fi
     echo ${value}
 }
@@ -285,7 +289,7 @@ _set_option_value()
 {
     local name=${1}
     local value=${2}
-    _set_option "${name}" "value" "${value}"
+    _set_option_item "${name}" "value" "${value}"
 }
 
 # is config for option
@@ -324,11 +328,63 @@ target()
         return
     fi
     local name=${1}
+    _xmake_sh_target_current=${name}
     _xmake_sh_targets="${_xmake_sh_targets} ${name}"
     _map_set "targets" "${name}_name" "${name}"
     return 0
 }
+target_end()
+{
+    _xmake_sh_target_current=""
+}
 _map "targets"
+
+# has the given target?
+_has_target()
+{
+    local name=${1}
+    if _map_has "targets" "${name}_name"; then
+        return 0
+    fi
+    return 1
+}
+
+# get the given target item
+_get_target_item()
+{
+    local name=${1}
+    local key=${2}
+    local value=`_map_get "targets" "${name}_${key}"`
+    echo ${value}
+}
+
+# set the given target item
+_set_target_item()
+{
+    local name=${1}
+    local key=${2}
+    local value=${3}
+    if test "x${name}" != "x"; then
+        _map_set "targets" "${name}_${key}" "${value}"
+    else
+        _die "please set target in the target scope!"
+    fi
+}
+
+# add values to the given target item
+_add_target_item()
+{
+    local name=${1}
+    local key=${2}
+    local value=${3}
+    if test "x${name}" != "x"; then
+        local values=`_map_get "targets" "${name}_${key}"`
+        values="${values} ${value}"
+        _map_set "targets" "${name}_${key}" "${values}"
+    else
+        _die "please set target in the target scope!"
+    fi
+}
 
 # set kind in target
 set_kind()
@@ -336,7 +392,8 @@ set_kind()
     if ! ${_loading_targets}; then
         return
     fi
-    echo "set kind ${1}"
+    local kind=${1}
+    _set_target_item "${_xmake_sh_target_current}" "kind" "${kind}"
 }
 
 # add deps in target
@@ -345,7 +402,9 @@ add_deps()
     if ! ${_loading_targets}; then
         return
     fi
-    echo "add deps ${1}"
+    for dep in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "deps" "${dep}"
+    done
 }
 
 # add files in target
@@ -354,7 +413,12 @@ add_files()
     if ! ${_loading_targets}; then
         return
     fi
-    echo "add files ${1}"
+    for file in $@; do
+        if test ! -f "${file}"; then
+            file="${xmake_sh_scriptdir}/${file}"
+        fi
+        _add_target_item "${_xmake_sh_target_current}" "files" "${file}"
+    done
 }
 
 # add defines in target
@@ -363,7 +427,9 @@ add_defines()
     if ! ${_loading_targets}; then
         return
     fi
-    echo "add defines ${1}"
+    for define in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "defines" "${define}"
+    done
 }
 
 # find file in the given directory
@@ -401,8 +467,8 @@ _load_options
 _show_options_usage()
 {
     for name in ${_xmake_sh_options}; do
-        local description=`_get_option "${name}" "description"`
-        local default=`_get_option "${name}" "default"`
+        local description=`_get_option_item "${name}" "description"`
+        local default=`_get_option_item "${name}" "default"`
         local head="--${name}=`_toupper ${name}`"
         local headsize=${#head}
         local tail="${description}"
