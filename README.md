@@ -63,28 +63,28 @@ This gives you access to the [xmake-io/technical-support](https://github.com/xma
 
 Xmake is a script-only build utility like autotools.
 
-### Advantages
+#### Advantages
 
 - [x] No any dependencies
 - [x] No installation, only one shell script file
 - [x] Easy, similar configuration syntax to xmake
 - [x] Compatible with autotools, same usage
 
-### Supported features
+#### Supported features
 
 - [x] Generate makefile
 
-### In the future it will support
+#### In the future it will support
 
 - [ ] Generate build.ninja
 - [ ] Detect options, code snippet, dependencies, compiler features
 - [ ] Support more xmake features
 
-## New project
+### New project
 
 Copy `./configure` script file to your project root directory.
 
-## Write project configuration
+### Write project configuration
 
 We just write `xmake.sh` project file, like this:
 
@@ -111,19 +111,19 @@ if has_config "tests"; then
 fi
 ```
 
-## Configure and generate makefile
+### Configure and generate makefile
 
 ```console
 $ ./configure
 ```
 
-## Build project
+### Build project
 
 ```console
 $ make
 ```
 
-## Install project
+### Install project
 
 ```console
 $ make install
