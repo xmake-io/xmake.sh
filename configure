@@ -269,13 +269,19 @@ os_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 _target_plat_default=${os_host}
 _target_arch_default=${os_arch}
 
-# set the default make program
+# set the default project generator and build program
 if is_host "freebsd" "bsd"; then
+    _project_generator="gmake"
     _make_program_default="gmake"
+    _ninja_program_default="ninja"
 elif is_host "msys" "cygwin"; then
+    _project_generator="gmake"
     _make_program_default="make.exe"
+    _ninja_program_default="ninja.exe"
 else
+    _project_generator="gmake"
     _make_program_default="make"
+    _ninja_program_default="ninja"
 fi
 
 # determining target platform
@@ -730,24 +736,28 @@ Common options:
   --version               Only print version information.
   --verbose               Display more information.
   --diagnosis             Display lots of diagnosis information.
+  --generator=GENERATOR   Set the project generator. (default: '"${_project_generator}"')
+                            - gmake
+                            - ninja
   --make=MAKE             Set the make program. (default: '"${_make_program_default}"')
+  --ninja=NINJA           Set the Ninja program. (default: '"${_ninja_program_default}"')
   --plat=PLAT             Compile for the given platform. (default: '"${_target_plat_default}"')
-                              - msys
-                              - cross
-                              - bsd
-                              - mingw
-                              - macosx
-                              - linux
+                            - msys
+                            - cross
+                            - bsd
+                            - mingw
+                            - macosx
+                            - linux
   --arch=ARCH             Compile for the given architecture. (default: '"${_target_arch_default}"')
-                              - msys: i386 x86_64
-                              - cross: i386 x86_64 arm arm64 mips mips64 riscv riscv64 s390x ppc ppc64 sh4
-                              - bsd: i386 x86_64
-                              - mingw: i386 x86_64 arm arm64
-                              - macosx: x86_64 arm64
-                              - linux: i386 x86_64 armv7 armv7s arm64-v8a mips mips64 mipsel mips64el
+                            - msys: i386 x86_64
+                            - cross: i386 x86_64 arm arm64 mips mips64 riscv riscv64 s390x ppc ppc64 sh4
+                            - bsd: i386 x86_64
+                            - mingw: i386 x86_64 arm arm64
+                            - macosx: x86_64 arm64
+                            - linux: i386 x86_64 armv7 armv7s arm64-v8a mips mips64 mipsel mips64el
   --toolchain=TOOLCHAIN   Set toolchain name.
-                              - clang
-                              - gcc
+                            - clang
+                            - gcc
 
 Project options:
 '"`_show_options_usage`"'
@@ -811,8 +821,14 @@ _handle_option()
     elif test "x${name}" = "xtoolchain"; then
         _target_toolchain=${value}
         return 0
+    elif test "x${name}" = "xgenerator"; then
+        _project_generator=${value}
+        return 0
     elif test "x${name}" = "xmake"; then
         _make_program=${value}
+        return 0
+    elif test "x${name}" = "xninja"; then
+        _ninja_program=${value}
         return 0
     elif _has_option "${name}"; then
         _set_option_value "${name}" "${value}"
@@ -847,6 +863,16 @@ _check_platform()
 
 # try make
 _toolchain_try_make()
+{
+    local program=${1}
+    if _try_run_program "${program}" "--version"; then
+        return 0
+    fi
+    return 1
+}
+
+# try ninja
+_toolchain_try_ninja()
 {
     local program=${1}
     if _try_run_program "${program}" "--version"; then
@@ -962,9 +988,10 @@ _toolchain_try()
     fi
     return 1
 }
-_toolchain_detect()
+
+# detect make
+_toolchain_detect_make()
 {
-    # detect make
     if test "x${_make_program}" = "x"; then
         _make_program=${_make_program_default}
     fi
@@ -974,6 +1001,37 @@ _toolchain_detect()
         echo "checking for make ... no"
         _die "make not found!"
     fi
+}
+
+# detect ninja
+_toolchain_detect_ninja()
+{
+    if test "x${_ninja_program}" = "x"; then
+        _ninja_program=${_ninja_program_default}
+    fi
+    if _toolchain_try_ninja "${_ninja_program}"; then
+        echo "checking for ninja ... ok"
+    else
+        echo "checking for ninja ... no"
+        _die "ninja not found!"
+    fi
+}
+
+# detect build backend
+_toolchain_detect_backend()
+{
+    if test "x${_project_generator}" == "xgmake"; then
+        _toolchain_detect_make
+    elif test "x${_project_generator}" == "xninja"; then
+        _toolchain_detect_ninja
+    fi
+}
+
+# detect toolchain
+_toolchain_detect()
+{
+    # detect build backend
+    _toolchain_detect_backend
 
     # detect toolchains
     local toolchains="${1}"
@@ -1038,4 +1096,8 @@ _load_targets()
     fi
 }
 _load_targets
+
+#-----------------------------------------------------------------------------
+# generate build file
+#
 
