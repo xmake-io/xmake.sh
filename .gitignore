@@ -2,6 +2,11 @@
 .xmake/
 build/
 
+# Makefile
+Makefile
+makefile
+build.ninja
+
 # MacOS Cache
 .DS_Store
 
