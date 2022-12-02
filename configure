@@ -1101,3 +1101,27 @@ _load_targets
 # generate build file
 #
 
+# generate build file for gmake
+_generate_for_gmake()
+{
+    _die "make generator has been not supported!"
+}
+
+# generate build file for ninja
+_generate_for_ninja()
+{
+    _die "Ninja generator has been not supported!"
+}
+
+# generate build file
+_generate_build_file()
+{
+    if test "x${_project_generator}" = "xgmake"; then
+        _generate_for_gmake
+    elif test "x${_project_generator}" = "xninja"; then
+        _generate_for_ninja
+    else
+        _die "unknown generator: ${_project_generator}"
+    fi
+}
+_generate_build_file
