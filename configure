@@ -1020,9 +1020,9 @@ _toolchain_detect_ninja()
 # detect build backend
 _toolchain_detect_backend()
 {
-    if test "x${_project_generator}" == "xgmake"; then
+    if test "x${_project_generator}" = "xgmake"; then
         _toolchain_detect_make
-    elif test "x${_project_generator}" == "xninja"; then
+    elif test "x${_project_generator}" = "xninja"; then
         _toolchain_detect_ninja
     fi
 }
