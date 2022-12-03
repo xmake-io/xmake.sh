@@ -81,6 +81,13 @@ _path_directory() {
     echo "${dirname}"
 }
 
+_path_relative() {
+    local rootdir="${1}"
+    local absolute_path="${2}"
+    local relative_path=`realpath --relative-to=${rootdir} "${absolute_path}"`
+    echo "${relative_path}"
+}
+
 _path_extension_replace() {
     echo "$1" | sed "s/\..*$/$2/"
 }
@@ -870,6 +877,7 @@ add_files()
         if test ! -f "${file}"; then
             file="${xmake_sh_scriptdir}/${file}"
         fi
+        file=`_path_relative ${xmake_sh_projectdir} "${file}"`
         _add_target_item "${_xmake_sh_target_current}" "files" "${file}"
     done
 }
