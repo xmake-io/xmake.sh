@@ -59,6 +59,68 @@ _dprint()
     fi
 }
 
+_path_filename() {
+    local filename=`basename -- "${1}"`
+    echo "${filename}"
+}
+
+_path_extension() {
+    local filename=`_path_filename "${1}"`
+    local extension="${filename##*.}"
+    echo ".${extension}"
+}
+
+_path_basename() {
+    local filename=`_path_filename "${1}"`
+    local basename="${filename%.*}"
+    echo "${basename}"
+}
+
+_path_directory() {
+    local dirname=`dirname -- "${1}"`
+    echo "${dirname}"
+}
+
+_path_extension_replace() {
+    echo "$1" | sed "s/\..*$/$2/"
+}
+
+_path_sourcekind() {
+    local extension=`_path_extension "${1}"`
+    case "${extension}" in
+        .c) sourcekind="cc";;
+        .cpp) sourcekind="cxx";;
+        .cc) sourcekind="cxx";;
+        .ixx) sourcekind="cxx";;
+        .m) sourcekind="mm";;
+        .mxx) sourcekind="mxx";;
+        .S) sourcekind="as";;
+        .s) sourcekind="as";;
+        .asm) sourcekind="as";;
+        *) _die "unknown sourcekind for ${1}" ;;
+    esac
+    echo "${sourcekind}"
+}
+
+_path_toolname() {
+    local basename=`_path_basename "${1}"`
+    local toolname=""
+    case "${basename}" in
+        *-gcc) toolname="gcc";;
+        gcc) toolname="gcc";;
+        *-g++) toolname="gxx";;
+        g++) toolname="gxx";;
+        *-clang++) toolname="clangxx";;
+        clang++) toolname="clangxx";;
+        *-clang) toolname="clang";;
+        clang) toolname="clang";;
+        *-ar) toolname="ar";;
+        ar) toolname="ar";;
+        *) _die "unknown tool for ${basename}";;
+    esac
+    echo "${toolname}"
+}
+
 # duplicate characters
 # e.g. _dupch 10 "." => ...........
 _dupch()
@@ -638,6 +700,18 @@ _get_targetdir() {
     echo "${targetdir}"
 }
 
+# get target object directory
+_get_target_objectdir() {
+    local name="${1}"
+    local objectdir=""
+    if _has_target_item "${name}" "objectdir"; then
+        objectdir=`_get_target_item "${name}" "objectdir"`
+    else
+        objectdir="${xmake_sh_buildir}/.objs/${name}/${_target_plat}/${_target_arch}/${_target_mode}"
+    fi
+    echo "${objectdir}"
+}
+
 # get target file path
 _get_target_file()
 {
@@ -646,6 +720,40 @@ _get_target_file()
     local targetdir=`_get_targetdir "${name}"`
     local targetfile="${targetdir}/${filename}"
     echo "${targetfile}"
+}
+
+# get sourcefiles in target
+_get_target_sourcefiles() {
+    local name="${1}"
+    local sourcefiles=`_get_target_item "${name}" "files"`
+    echo "${sourcefiles}"
+}
+
+# get objectfile in target
+_get_target_objectfile() {
+    local name="${1}"
+    local sourcefile="${2}"
+    local filename=`_path_filename "${sourcefile}"`
+    local extension=".o"
+    if is_plat "mingw"; then
+        extension=".obj"
+    fi
+    filename=`_path_extension_replace "${filename}" "${extension}"`
+    local objectdir=`_get_target_objectdir "${name}"`
+    local objectfile="${objectdir}/${filename}"
+    echo "${objectfile}"
+}
+
+# get objectfiles in target
+_get_target_objectfiles() {
+    local name="${1}"
+    local sourcefiles=`_get_target_sourcefiles "${name}"`
+    local objectfiles=""
+    for sourcefile in ${sourcefiles}; do
+        local objectfile=`_get_target_objectfile "${name}" "${sourcefile}"`
+        objectfiles="${objectfiles} ${objectfile}"
+    done
+    echo "${objectfiles}"
 }
 
 # set kind in target
@@ -716,6 +824,16 @@ set_targetdir()
     fi
     local targetdir="${1}"
     _set_target_item "${_xmake_sh_target_current}" "targetdir" "${targetdir}"
+}
+
+# set target object directory
+set_objectdir()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    local objectdir="${1}"
+    _set_target_item "${_xmake_sh_target_current}" "objectdir" "${objectdir}"
 }
 
 # add deps in target
@@ -1093,6 +1211,25 @@ _toolchain_try_gcc()
     return 1
 }
 
+# try g++
+_toolchain_try_gxx()
+{
+    if test "x${_toolchain_try_gxx_result}" = "xok"; then
+        return 0
+    elif test "x${_toolchain_try_gxx_result}" = "xno"; then
+        return 1
+    fi
+
+    local kind=${1}
+    local program=${2}
+    if _try_run_program "${program}" "--version"; then
+        _toolchain_try_gxx_result="ok"
+        return 0
+    fi
+    _toolchain_try_gxx_result="no"
+    return 1
+}
+
 # try clang
 _toolchain_try_clang()
 {
@@ -1112,6 +1249,25 @@ _toolchain_try_clang()
     return 1
 }
 
+# try clang++
+_toolchain_try_clangxx()
+{
+    if test "x${_toolchain_try_clangxx_result}" = "xok"; then
+        return 0
+    elif test "x${_toolchain_try_clangxx_result}" = "xno"; then
+        return 1
+    fi
+
+    local kind=${1}
+    local program=${2}
+    if _try_run_program "${program}" "--version"; then
+        _toolchain_try_clangxx_result="ok"
+        return 0
+    fi
+    _toolchain_try_clangxx_result="no"
+    return 1
+}
+
 # TODO try ar
 _toolchain_try_ar()
 {
@@ -1127,17 +1283,14 @@ _toolchain_try_program()
     local kind=${2}
     local program=${3}
     local ok=false
-    local filename=`basename "${program}"`
-    case "${filename}" in
-        *-gcc) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
+    local toolname=`_path_toolname "${program}"`
+    case "${toolname}" in
         gcc) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
-        *-g++) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
-        g++) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
-        *-clang*) _toolchain_try_clang "${kind}" "${program}" && ok=true;;
-        clang*) _toolchain_try_clang "${kind}" "${program}" && ok=true;;
-        *-ar) _toolchain_try_ar "${kind}" "${program}" && ok=true;;
+        gxx) _toolchain_try_gxx "${kind}" "${program}" && ok=true;;
+        clang) _toolchain_try_clang "${kind}" "${program}" && ok=true;;
+        clangxx) _toolchain_try_clangxx "${kind}" "${program}" && ok=true;;
         ar) _toolchain_try_ar "${kind}" "${program}" && ok=true;;
-        *) _die "unknown program(${program}) for kind(${kind}) in toolchain(${toolchain})!" ;;
+        *) _die "unknown toolname(${toolname})!" ;;
     esac
     if ${ok}; then
         _vprint "checking for ${program} ... ok"
@@ -1310,14 +1463,65 @@ _gmake_add_toolchains() {
     echo "" >> "${xmake_sh_projectdir}/Makefile"
 }
 
-_gmake_add_build_for_target() {
-    local target=${1}
-    local targetfile=`_get_target_file "${target}"`
-    echo "${target}: ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
-    echo "${targetfile}:" >> "${xmake_sh_projectdir}/Makefile"
+_gmake_add_build_object_gcc_clang() {
+    local kind="${1}"
+    local program="${2}"
+    local sourcefile="${3}"
+    local objectfile="${4}"
+    local flags="${5}"
+    echo "\t@echo ${program} -c ${flags} -o "${objectfile}" ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
-_gmake_add_build_for_targets() {
+_gmake_add_build_object() {
+    local target=${1}
+    local sourcefile="${2}"
+    local objectfile="${3}"
+    local sourcekind=`_path_sourcekind "${sourcefile}"`
+    local program=`_get_toolchain_toolset "${_target_toolchain}" "${sourcekind}"`
+    local toolname=`_path_toolname "${program}"`
+    local flags=""
+    echo "${objectfile}: ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "${sourcefile}:" >> "${xmake_sh_projectdir}/Makefile"
+    echo "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
+    case "${toolname}" in
+        gcc) _gmake_add_build_object_gcc_clang "${sourcekind}" "${program}" "${sourcefile}" "${objectfile}" "${flags}";;
+        gxx) _gmake_add_build_object_gcc_clang "${sourcekind}" "${program}" "${sourcefile}" "${objectfile}" "${flags}";;
+        clang) _gmake_add_build_object_gcc_clang "${sourcekind}" "${program}" "${sourcefile}" "${objectfile}" "${flags}";;
+        clangxx) _gmake_add_build_object_gcc_clang "${sourcekind}" "${program}" "${sourcefile}" "${objectfile}" "${flags}";;
+        *) _die "unknown toolname(${toolname})!" ;;
+    esac
+    echo "" >> "${xmake_sh_projectdir}/Makefile"
+}
+
+_gmake_add_build_objects() {
+    local target=${1}
+    local sourcefiles=`_get_target_sourcefiles "${target}"`
+    for sourcefile in ${sourcefiles}; do
+        local objectfile=`_get_target_objectfile "${target}" "${sourcefile}"`
+        _gmake_add_build_object "${target}" "${sourcefile}" "${objectfile}"
+    done
+}
+
+_gmake_add_build_target() {
+    local target=${1}
+    local targetdir=`_get_targetdir "${target}"`
+    local targetfile=`_get_target_file "${target}"`
+    local deps=`_get_target_item "${target}" "deps"`
+    local objectfiles=`_get_target_objectfiles "${target}"`
+
+    # link target
+    echo "${target}: ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "${targetfile}: ${deps}${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "\t@echo linking.${_target_mode} ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "\t@mkdir -p ${targetdir}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "\tTODO link program" >> "${xmake_sh_projectdir}/Makefile"
+    echo "" >> "${xmake_sh_projectdir}/Makefile"
+
+    # build objects
+    _gmake_add_build_objects "${target}"
+}
+
+_gmake_add_build_targets() {
     local defaults=""
     for target in ${_xmake_sh_targets}; do
         local default=`_get_target_item "${target}" "default"`
@@ -1330,12 +1534,12 @@ _gmake_add_build_for_targets() {
     echo ".PHONY: default all" >> "${xmake_sh_projectdir}/Makefile"
     echo "" >> "${xmake_sh_projectdir}/Makefile"
     for target in ${_xmake_sh_targets}; do
-        _gmake_add_build_for_target "${target}"
+        _gmake_add_build_target "${target}"
     done
 }
 
 _gmake_add_build() {
-    _gmake_add_build_for_targets
+    _gmake_add_build_targets
 }
 
 _gmake_done() {
