@@ -1475,6 +1475,13 @@ _gmake_add_header() {
 " > "${xmake_sh_projectdir}/Makefile"
 }
 
+_gmake_add_switches() {
+    echo "ifneq (\$(VERBOSE),1)" >> "${xmake_sh_projectdir}/Makefile"
+    echo "V=@" >> "${xmake_sh_projectdir}/Makefile"
+    echo "endif" >> "${xmake_sh_projectdir}/Makefile"
+    echo "" >> "${xmake_sh_projectdir}/Makefile"
+}
+
 _gmake_add_toolchains() {
     local kinds="cc cxx as mm mxx ld sh ar"
     for kind in ${kinds}; do
@@ -1491,7 +1498,7 @@ _gmake_add_build_object_gcc_clang() {
     local flags="${4}"
     local objectdir=`_path_directory "${objectfile}"`
     echo "\t@mkdir -p ${objectdir}" >> "${xmake_sh_projectdir}/Makefile"
-    echo "\t@\$(${kind}) -c ${flags} -o "${objectfile}" ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "\t\$(V)\$(${kind}) -c ${flags} -o "${objectfile}" ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_object() {
@@ -1569,6 +1576,7 @@ _gmake_done() {
 _generate_for_gmake()
 {
     _gmake_add_header
+    _gmake_add_switches
     _gmake_add_toolchains
     _gmake_add_build
     _gmake_done
