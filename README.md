@@ -73,6 +73,7 @@ Xmake is a script-only build utility like autotools.
 #### Supported features
 
 - [x] Generate makefile
+- [x] Custom toolchains
 
 #### In the future it will support
 
