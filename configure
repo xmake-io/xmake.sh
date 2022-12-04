@@ -1544,10 +1544,10 @@ _gmake_add_build_object_for_gcc_clang() {
     local kind=`_toupper "${1}"`
     local sourcefile="${2}"
     local objectfile="${3}"
-    local flags="${4}"
+    local flagname="${4}"
     local objectdir=`_path_directory "${objectfile}"`
     echo "\t@mkdir -p ${objectdir}" >> "${xmake_sh_projectdir}/Makefile"
-    echo "\t\$(V)\$(${kind}) -c ${flags} -o ${objectfile} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "\t\$(V)\$(${kind}) -c \$(${flagname}) -o ${objectfile} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_object() {
@@ -1557,14 +1557,15 @@ _gmake_add_build_object() {
     local sourcekind=`_path_sourcekind "${sourcefile}"`
     local program=`_get_toolchain_toolset "${_target_toolchain}" "${sourcekind}"`
     local toolname=`_path_toolname "${program}"`
-    local flags=""
+    local flagname=`_get_flagname "${sourcekind}"`
+    flagname=`_toupper "${target}_${flagname}"`
     echo "${objectfile}: ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
     echo "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
     case "${toolname}" in
-        gcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flags}";;
-        gxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flags}";;
-        clang) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flags}";;
-        clangxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flags}";;
+        gcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
+        gxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
+        clang) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
+        clangxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
         *) _die "unknown toolname(${toolname})!" ;;
     esac
     echo "" >> "${xmake_sh_projectdir}/Makefile"
