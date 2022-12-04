@@ -125,10 +125,16 @@ $ ./configure
 $ make
 ```
 
-### Install project
+### Install artifacts
 
 ```console
 $ make install
+```
+
+### Run program
+
+```console
+$ make run
 ```
 
 ### Supported apis
