@@ -839,6 +839,8 @@ _get_target_compiler_flags() {
     local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
     local toolname=`_path_toolname "${program}"`
     local result=""
+
+    # get abstract flags
     local itemnames="defines undefines includedirs"
     for itemname in ${itemnames}; do
         local flags=`_get_target_abstract_flags "${name}" "${toolname}" "${itemname}"`
@@ -846,6 +848,13 @@ _get_target_compiler_flags() {
             result="${result} ${flags}"
         fi
     done
+
+    # get raw flags, e.g. add_cflags, add_cxxflags
+    local flagname=`_get_flagname "${toolkind}"`
+    local flags=`_get_target_item "${name}" "${flagname}"`
+    if test "x${flags}" != "x"; then
+        result="${result} ${flags}"
+    fi
     echo "${result}"
 }
 
@@ -856,6 +865,8 @@ _get_target_linker_flags() {
     local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
     local toolname=`_path_toolname "${program}"`
     local result=""
+
+    # get abstract flags
     local itemnames="linkdirs links syslinks"
     for itemname in ${itemnames}; do
         local flags=`_get_target_abstract_flags "${name}" "${toolname}" "${itemname}"`
@@ -863,6 +874,13 @@ _get_target_linker_flags() {
             result="${result} ${flags}"
         fi
     done
+
+    # get raw flags, e.g. add_ldflags, add_shflags
+    local flagname=`_get_flagname "${toolkind}"`
+    local flags=`_get_target_item "${name}" "${flagname}"`
+    if test "x${flags}" != "x"; then
+        result="${result} ${flags}"
+    fi
     echo "${result}"
 }
 
@@ -872,8 +890,15 @@ _get_target_archiver_flags() {
     local toolkind="${2}"
     local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
     local toolname=`_path_toolname "${program}"`
-    local flags="-cr"
-    echo "${flags}"
+    local result="-cr"
+
+    # get raw flags, e.g. add_arflags
+    local flagname=`_get_flagname "${toolkind}"`
+    local flags=`_get_target_item "${name}" "${flagname}"`
+    if test "x${flags}" != "x"; then
+        result="${result} ${flags}"
+    fi
+    echo "${result}"
 }
 
 # get target flags
@@ -1070,6 +1095,94 @@ add_linkdirs()
         fi
         dir=`_path_relative ${xmake_sh_projectdir} "${dir}"`
         _add_target_item "${_xmake_sh_target_current}" "linkdirs" "${dir}"
+    done
+}
+
+# add cflags in target
+add_cflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "cflags" "${flag}"
+    done
+}
+
+# add cxxflags in target
+add_cxxflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "cxxflags" "${flag}"
+    done
+}
+
+# add asflags in target
+add_asflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "asflags" "${flag}"
+    done
+}
+
+# add mflags in target
+add_mflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "mflags" "${flag}"
+    done
+}
+
+# add mxxflags in target
+add_mxxflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "mxxflags" "${flag}"
+    done
+}
+
+# add ldflags in target
+add_ldflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "ldflags" "${flag}"
+    done
+}
+
+# add shflags in target
+add_shflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "shflags" "${flag}"
+    done
+}
+
+# add arflags in target
+add_arflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "arflags" "${flag}"
     done
 }
 
