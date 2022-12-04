@@ -1594,9 +1594,10 @@ _gmake_add_build_target_for_ar() {
     local targetfile="${2}"
     local objectfiles="${3}"
     local flags="${4}"
+    local flagname="${5}"
     local targetdir=`_path_directory "${targetfile}"`
     echo "\t@mkdir -p ${targetdir}" >> "${xmake_sh_projectdir}/Makefile"
-    echo "\t\$(V)\$(${kind}) -cr ${flags} ${targetfile} ${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "\t\$(V)\$(${kind}) -cr \$(${flagname}) ${flags} ${targetfile} ${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_target() {
@@ -1618,16 +1619,21 @@ _gmake_add_build_target() {
     local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
     local toolname=`_path_toolname "${program}"`
 
+    # get linker flags
+    local flags=`_get_target_flags "${target}" "${toolkind}"`
+    local flagname=`_get_flagname "${toolkind}"`
+    flagname=`_toupper "${target}_${flagname}"`
+
     # link target
     echo "${target}: ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
     echo "${targetfile}: ${deps}${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
     echo "\t@echo linking.${_target_mode} ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
     case "${toolname}" in
-        gcc) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}";;
-        gxx) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}";;
-        clang) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}";;
-        clangxx) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}";;
-        ar) _gmake_add_build_target_for_ar "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}";;
+        gcc) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}" "${flagname}";;
+        gxx) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}" "${flagname}";;
+        clang) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}" "${flagname}";;
+        clangxx) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}" "${flagname}";;
+        ar) _gmake_add_build_target_for_ar "${toolkind}" "${targetfile}" "${objectfiles}" "${flags}" "${flagname}";;
         *) _die "unknown toolname(${toolname})!" ;;
     esac
     echo "" >> "${xmake_sh_projectdir}/Makefile"
