@@ -1548,7 +1548,7 @@ _gmake_add_build_target() {
     local objectfiles=`_get_target_objectfiles "${target}"`
 
     # get linker
-    local targetkind=`_get_target_item "${name}" "kind"`
+    local targetkind=`_get_target_item "${target}" "kind"`
     local toolkind=""
     case "${targetkind}" in
         binary) toolkind="ld";;
