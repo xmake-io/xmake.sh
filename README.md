@@ -141,35 +141,56 @@ $ make install
 - [x] is_config
 - [x] has_config
 - [x] target
- - [x] set_kind
- - [x] add_deps
- - [x] add_files
- - [x] set_basename
- - [x] set_extension
- - [x] set_filename
- - [x] set_prefixname
- - [x] set_targetdir
- - [x] set_objectdir
- - [x] add_defines
- - [x] add_undefines
- - [x] add_includedirs
- - [x] add_linkdirs
- - [x] add_links
- - [x] add_syslinks
- - [ ] add_cflags
- - [ ] add_cxflags
- - [ ] add_cxxflags
- - [ ] add_mflags
- - [ ] add_mxflags
- - [ ] add_mxxflags
- - [ ] add_asflags
- - [ ] add_ldflags
- - [ ] add_shflags
- - [ ] add_arflags
+  - [x] set_kind
+  - [x] add_deps
+  - [x] add_files
+  - [x] set_basename
+  - [x] set_extension
+  - [x] set_filename
+  - [x] set_prefixname
+  - [x] set_targetdir
+  - [x] set_objectdir
+  - [x] add_defines
+  - [x] add_undefines
+  - [x] add_includedirs
+  - [x] add_linkdirs
+  - [x] add_links
+  - [x] add_syslinks
+  - [ ] add_cflags
+  - [ ] add_cxflags
+  - [ ] add_cxxflags
+  - [ ] add_mflags
+  - [ ] add_mxflags
+  - [ ] add_mxxflags
+  - [ ] add_asflags
+  - [ ] add_ldflags
+  - [ ] add_shflags
+  - [ ] add_arflags
+  - [ ] set_configdir
+  - [ ] set_configfiles
+  - [ ] set_configvar
+  - [ ] set_installdir
+  - [ ] add_installfiles
+  - [ ] add_headerfiles
+  - [ ] add_options
 - [x] target_end
 - [x] option
   - [x] set_default
   - [x] set_description
+  - [ ] add_defines
+  - [ ] add_undefines
+  - [ ] add_includedirs
+  - [ ] add_linkdirs
+  - [ ] add_links
+  - [ ] add_syslinks
+  - [ ] add_cfuncs
+  - [ ] add_cxxfuncs
+  - [ ] add_cincludes
+  - [ ] add_cxxincludes
+  - [ ] add_ctypes
+  - [ ] add_cxxtypes
+  - [ ] add_csnippets
+  - [ ] add_cxxsnippets
   - [ ] ...
 - [x] option_end
 - [x] toolchain
