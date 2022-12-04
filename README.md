@@ -156,16 +156,16 @@ $ make install
   - [x] add_linkdirs
   - [x] add_links
   - [x] add_syslinks
-  - [ ] add_cflags
+  - [x] add_cflags
   - [ ] add_cxflags
-  - [ ] add_cxxflags
-  - [ ] add_mflags
+  - [x] add_cxxflags
+  - [x] add_mflags
   - [ ] add_mxflags
-  - [ ] add_mxxflags
-  - [ ] add_asflags
-  - [ ] add_ldflags
-  - [ ] add_shflags
-  - [ ] add_arflags
+  - [x] add_mxxflags
+  - [x] add_asflags
+  - [x] add_ldflags
+  - [x] add_shflags
+  - [x] add_arflags
   - [ ] set_configdir
   - [ ] set_configfiles
   - [ ] set_configvar
