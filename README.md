@@ -131,6 +131,41 @@ $ make
 $ make install
 ```
 
+### Supported apis
+
+- [x] target
+ - [x] set_kind
+ - [x] add_deps
+ - [x] add_files
+ - [x] add_defines
+ - [x] add_undefines
+ - [x] add_includedirs
+ - [x] add_linkdirs
+ - [x] add_links
+ - [x] add_syslinks
+ - [ ] add_cflags
+ - [ ] add_cxflags
+ - [ ] add_cxxflags
+ - [ ] add_mflags
+ - [ ] add_mxflags
+ - [ ] add_mxxflags
+ - [ ] add_asflags
+ - [ ] add_ldflags
+ - [ ] add_shflags
+ - [ ] add_arflags
+- [x] target_end
+- [x] option
+  - [x] set_default
+  - [x] set_description
+  - [ ] ...
+- [x] option_end
+- [x] toolchain
+  - [x] set_toolset
+  - [ ] set_sdkdir
+  - [ ] set_bindir
+  - [ ] set_cross
+- [x] toolchain_end
+
 ## Contacts
 
 * Email：[waruqi@gmail.com](mailto:waruqi@gmail.com)
