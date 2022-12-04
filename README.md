@@ -133,10 +133,23 @@ $ make install
 
 ### Supported apis
 
+- [x] includes
+- [x] is_plat
+- [x] is_arch
+- [x] is_host
+- [x] is_mode
+- [x] is_config
+- [x] has_config
 - [x] target
  - [x] set_kind
  - [x] add_deps
  - [x] add_files
+ - [x] set_basename
+ - [x] set_extension
+ - [x] set_filename
+ - [x] set_prefixname
+ - [x] set_targetdir
+ - [x] set_objectdir
  - [x] add_defines
  - [x] add_undefines
  - [x] add_includedirs
