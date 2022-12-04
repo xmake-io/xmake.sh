@@ -99,6 +99,7 @@ target "demo"
     set_kind "binary"
     add_deps "foo" "bar"
     add_files "main.cpp"
+    add_includedirs "foo" "bar"
     if has_config "debug"; then
         add_defines "DEBUG"
     fi

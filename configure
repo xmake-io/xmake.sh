@@ -794,22 +794,102 @@ _get_target_objectfiles() {
     echo "${objectfiles}"
 }
 
+# get abstract flag for gcc/clang in target
+_get_target_abstract_flag_for_gcc_clang() {
+    local name="${1}"
+    local itemname="${2}"
+    local value="${3}"
+    local flag=""
+    case "${itemname}" in
+        defines) flag="-D${value}";;
+        udefines) flag="-U${value}";;
+        includedirs) flag="-I${value}";;
+        *) _die "unknown itemname(${itemname})!" ;;
+    esac
+    echo "${flag}"
+}
+
+# get abstract flags in target
+_get_target_abstract_flags() {
+    local name="${1}"
+    local toolname="${2}"
+    local itemname="${3}"
+    local values=`_get_target_item "${name}" "${itemname}"`
+    local flags=""
+    for value in ${values}; do
+        local flag=""
+        case "${toolname}" in
+            gcc) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${itemname}" "${value}"`;;
+            gxx) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${itemname}" "${value}"`;;
+            clang) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${itemname}" "${value}"`;;
+            clangxx) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${itemname}" "${value}"`;;
+            *) _die "unknown toolname(${toolname})!" ;;
+        esac
+        if test "x${flag}" != "x"; then
+            flags="${flags} ${flag}"
+        fi
+    done
+    echo "${flags}"
+}
+
+# get compiler flags in target
+_get_target_compiler_flags() {
+    local name="${1}"
+    local toolkind="${2}"
+    local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
+    local toolname=`_path_toolname "${program}"`
+    local result=""
+    local itemnames="defines undefines includedirs"
+    for itemname in ${itemnames}; do
+        local flags=`_get_target_abstract_flags "${name}" "${toolname}" "${itemname}"`
+        if test "x${flags}" != "x"; then
+            result="${result} ${flags}"
+        fi
+    done
+    echo "${result}"
+}
+
+# get linker flags in target
+_get_target_linker_flags() {
+    local name="${1}"
+    local toolkind="${2}"
+    local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
+    local toolname=`_path_toolname "${program}"`
+    local result=""
+    local itemnames="linkdirs links syslinks"
+    for itemname in ${itemnames}; do
+        local flags=`_get_target_abstract_flags "${name}" "${toolname}" "${itemname}"`
+        if test "x${flags}" != "x"; then
+            result="${result} ${flags}"
+        fi
+    done
+    echo "${result}"
+}
+
+# get archiver flags in target
+_get_target_archiver_flags() {
+    local name="${1}"
+    local toolkind="${2}"
+    local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
+    local toolname=`_path_toolname "${program}"`
+    local flags="-cr"
+    echo "${flags}"
+}
+
 # get target flags
 _get_target_flags() {
     local name="${1}"
     local toolkind="${2}"
     local flags=""
-    case "${toolkind}" in
-        cc) ;;
-        cxx) ;;
-        as) ;;
-        mm) ;;
-        mxx) ;;
-        ar) ;;
-        sh) ;;
-        ld) ;;
-        *) _die "unknown toolkind(${toolkind}) for target(${target})!" ;;
-    esac
+    if test "x${toolkind}" = "xsh"; then
+        flags=`_get_target_linker_flags "${name}" "${toolkind}"`
+    elif test "x${toolkind}" = "xld"; then
+        flags=`_get_target_linker_flags "${name}" "${toolkind}"`
+    elif test "x${toolkind}" = "xar"; then
+        flags=`_get_target_archiver_flags "${name}" "${toolkind}"`
+    else
+        flags=`_get_target_compiler_flags "${name}" "${toolkind}"`
+    fi
     echo "${flags}"
 }
 
@@ -927,6 +1007,69 @@ add_defines()
     fi
     for define in $@; do
         _add_target_item "${_xmake_sh_target_current}" "defines" "${define}"
+    done
+}
+
+# add udefines in target
+add_udefines()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for udefine in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "udefines" "${udefine}"
+    done
+}
+
+# add includedirs in target
+add_includedirs()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for dir in $@; do
+        if test ! -d "${dir}"; then
+            dir="${xmake_sh_scriptdir}/${dir}"
+        fi
+        dir=`_path_relative ${xmake_sh_projectdir} "${dir}"`
+        _add_target_item "${_xmake_sh_target_current}" "includedirs" "${dir}"
+    done
+}
+
+# add links in target
+add_links()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for link in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "links" "${link}"
+    done
+}
+
+# add syslinks in target
+add_syslinks()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for syslink in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "syslinks" "${syslink}"
+    done
+}
+
+# add linkdirs in target
+add_linkdirs()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for dir in $@; do
+        if test ! -d "${dir}"; then
+            dir="${xmake_sh_scriptdir}/${dir}"
+        fi
+        dir=`_path_relative ${xmake_sh_projectdir} "${dir}"`
+        _add_target_item "${_xmake_sh_target_current}" "linkdirs" "${dir}"
     done
 }
 
@@ -1597,7 +1740,7 @@ _gmake_add_build_target_for_ar() {
     local flagname="${4}"
     local targetdir=`_path_directory "${targetfile}"`
     echo "\t@mkdir -p ${targetdir}" >> "${xmake_sh_projectdir}/Makefile"
-    echo "\t\$(V)\$(${kind}) -cr \$(${flagname}) ${flags} ${targetfile} ${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
+    echo "\t\$(V)\$(${kind}) \$(${flagname}) ${flags} ${targetfile} ${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_target() {
