@@ -900,13 +900,13 @@ _get_target_abstract_flag_for_gcc_clang() {
             ;;
         strip)
             if _test_eq "${value}" "debug"; then
+                flag="-Wl,-S"
+            elif _test_eq "${value}" "all"; then
                 if is_plat "macosx"; then
                     flag="-Wl,-x"
                 else
-                    flag="-Wl,-S"
+                    flag="-s"
                 fi
-            elif _test_eq "${value}" "all"; then
-                flag="-s"
             fi
             ;;
         warnings)
