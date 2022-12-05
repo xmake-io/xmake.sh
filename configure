@@ -892,57 +892,57 @@ _get_target_abstract_flag_for_gcc_clang() {
         frameworks) flag="-framework ${value}";;
         frameworkdirs) flag="-F${value}";;
         symbols)
-            if test "x${value}" = "xdebug"; then
+            if _test_eq "${value}" "debug"; then
                 flag="-g"
-            elif test "x${value}" = "xhidden"; then
+            elif _test_eq "${value}" = "hidden"; then
                 flag="-fvisibility=hidden"
             fi
             ;;
         strip)
-            if test "x${value}" = "xdebug"; then
+            if _test_eq "${value}" "debug"; then
                 if is_plat "macosx"; then
                     flag="-Wl,-x"
                 else
                     flag="-Wl,-S"
                 fi
-            elif test "x${value}" = "xall"; then
+            elif _test_eq "${value}" "all"; then
                 flag="-s"
             fi
             ;;
         warnings)
-            if test "x${value}" = "xall" -o "x${value}" = "xmore" -o "x${value}" = "xless"; then
+            if _test_eq "${value}" "all" || _test_eq "${value}" "more" || _test_eq "${value}" = "less"; then
                 flag="-Wall"
-            elif test "x${value}" = "xallextra"; then
+            elif _test_eq "${value}" "allextra"; then
                 flag="-Wall -Wextra"
-            elif test "x${value}" = "xerror"; then
+            elif _test_eq "${value}" "error"; then
                 flag="-Werror"
-            elif test "x${value}" = "xeverything"; then
+            elif _test_eq "${value}" "everything"; then
                 flag="-Wall -Wextra"
-            elif test "x${value}" = "xnone"; then
+            elif _test_eq "${value}" "none"; then
                 flag="-w"
             fi
             ;;
         optimizes)
-            if test "x${value}" = "xfast"; then
+            if _test_eq "${value}" "fast"; then
                 flag="-O1"
-            elif test "x${value}" = "xfaster"; then
+            elif _test_eq "${value}" "faster"; then
                 flag="-O2"
-            elif test "x${value}" = "xfastest"; then
+            elif _test_eq "${value}" "fastest"; then
                 flag="-O3"
-            elif test "x${value}" = "xsmallest"; then
-                if test "x${toolname}" = "xclang" -o "x{toolname}" = "xclangxx"; then
+            elif _test_eq "${value}" "smallest"; then
+                if _test_eq "${toolname}" "clang" || _test_eq "${toolname}" "clangxx"; then
                     flag="-Oz"
                 else
                     flag="-Os"
                 fi
-            elif test "x${value}" = "xaggressive"; then
+            elif _test_eq "${value}" "aggressive"; then
                 flag="-Ofast"
-            elif test "x${value}" = "xnone"; then
+            elif _test_eq "${value}" "none"; then
                 flag="-O0"
             fi
             ;;
         languages)
-            if test "x${toolkind}" = "xcc" -o "x${toolkind}" = "xmm"; then
+            if _test_eq "${toolkind}" "cc" || _test_eq "${toolkind}" "mm"; then
                 case "${value}" in
                     ansi) flag="-ansi";;
                     c89) flag="-std=c89";;
@@ -954,7 +954,7 @@ _get_target_abstract_flag_for_gcc_clang() {
                     c17) flag="-std=c17";;
                     gnu17) flag="-std=gnu17";;
                 esac
-            elif test "x${toolkind}" = "xcxx" -o "x${toolkind}" = "xmxx"; then
+            elif _test_eq "${toolkind}" "cxx" || _test_eq "${toolkind}" "mxx"; then
                 case "${value}" in
                     cxx98) flag="-std=c++98";;
                     c++98) flag="-std=c++98";;
@@ -1065,7 +1065,7 @@ _get_target_linker_flags() {
     local deps=$(_get_target_item "${name}" "deps")
     for dep in ${deps}; do
         local dep_kind=$(_get_target_item "${dep}" "kind")
-        if test "x${dep_kind}" = "xstatic" -o "x${dep_kind}" = "xshared"; then
+        if _test_eq "${dep_kind}" "static" || _test_eq "${dep_kind}" = "shared"; then
             local dep_targetdir=$(_get_targetdir "${dep}")
             local dep_basename=$(_get_target_basename "${dep}")
             local linkdirs_flags=$(_get_target_abstract_flags "${dep}" "${toolkind}" "${toolname}" "linkdirs" "${dep_targetdir}")
