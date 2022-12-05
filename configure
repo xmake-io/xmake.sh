@@ -894,7 +894,7 @@ _get_target_abstract_flag_for_gcc_clang() {
         symbols)
             if _test_eq "${value}" "debug"; then
                 flag="-g"
-            elif _test_eq "${value}" = "hidden"; then
+            elif _test_eq "${value}" "hidden"; then
                 flag="-fvisibility=hidden"
             fi
             ;;
@@ -910,7 +910,7 @@ _get_target_abstract_flag_for_gcc_clang() {
             fi
             ;;
         warnings)
-            if _test_eq "${value}" "all" || _test_eq "${value}" "more" || _test_eq "${value}" = "less"; then
+            if _test_eq "${value}" "all" || _test_eq "${value}" "more" || _test_eq "${value}" "less"; then
                 flag="-Wall"
             elif _test_eq "${value}" "allextra"; then
                 flag="-Wall -Wextra"
