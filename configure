@@ -92,6 +92,19 @@ _test_nq() {
     return 1
 }
 
+# test contains sub-string
+# e.g.
+# str="src/*.cpp"
+# _test_contains "$str" "src"
+# _test_contains "$str" "\*"
+_test_contains() {
+    case "${1}" in
+        *${2}*) return 0;;
+        *) return 1;;
+    esac
+    return 1
+}
+
 # try run program
 _try_run_program()
 {
@@ -575,7 +588,7 @@ _set_option_item()
     local name=${1}
     local key=${2}
     local value=${3}
-    if test "x${name}" != "x"; then
+    if _test_nz "${name}"; then
         _map_set "options" "${name}_${key}" "${value}"
     else
         _die "please set option in the option scope!"
@@ -694,7 +707,7 @@ _set_target_item()
     local name=${1}
     local key=${2}
     local value=${3}
-    if test "x${name}" != "x"; then
+    if _test_nz "${name}"; then
         _map_set "targets" "${name}_${key}" "${value}"
     else
         _map_set "targets" "__root_${key}" "${value}"
@@ -707,7 +720,7 @@ _add_target_item()
     local name=${1}
     local key=${2}
     local value=${3}
-    if test "x${name}" != "x"; then
+    if _test_nz "${name}"; then
         local values=$(_map_get "targets" "${name}_${key}")
         values="${values} ${value}"
         _map_set "targets" "${name}_${key}" "${values}"
@@ -1007,7 +1020,7 @@ _get_target_abstract_flags() {
     local toolname="${3}"
     local itemname="${4}"
     local values="${5}"
-    if test "x${values}" = "x"; then
+    if _test_z "${values}"; then
         values=$(_get_target_item "${name}" "${itemname}")
     fi
     local flags=""
@@ -1020,7 +1033,7 @@ _get_target_abstract_flags() {
             clangxx) flag=$(_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}");;
             *) _die "unknown toolname(${toolname})!" ;;
         esac
-        if test "x${flag}" != "x"; then
+        if _test_nz "${flag}"; then
             flags="${flags} ${flag}"
         fi
     done
@@ -1571,7 +1584,7 @@ _set_toolchain_item()
     local name=${1}
     local key=${2}
     local value=${3}
-    if test "x${name}" != "x"; then
+    if _test_nz "${name}"; then
         _map_set "toolchains" "${name}_${key}" "${value}"
     else
         _die "please set toolchain in the toolchain scope!"
