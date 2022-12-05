@@ -20,6 +20,7 @@ target "demo"
         set_symbols "debug"
         set_optimizes "none"
     else
+        set_strip "all"
         set_symbols "hidden"
         set_optimizes "smallest"
     fi

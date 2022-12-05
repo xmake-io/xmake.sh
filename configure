@@ -818,6 +818,17 @@ _get_target_abstract_flag_for_gcc_clang() {
                 flag="-fvisibility=hidden"
             fi
             ;;
+        strip)
+            if test "x${value}" = "xdebug"; then
+                if is_plat "macosx"; then
+                    flag="-Wl,-x"
+                else
+                    flag="-Wl,-S"
+                fi
+            elif test "x${value}" = "xall"; then
+                flag="-s"
+            fi
+            ;;
         warnings)
             if test "x${value}" = "xall" -o "x${value}" = "xmore" -o "x${value}" = "xless"; then
                 flag="-Wall"
@@ -984,7 +995,7 @@ _get_target_linker_flags() {
     done
 
     # get abstract flags
-    local itemnames="frameworkdirs linkdirs links frameworks syslinks"
+    local itemnames="strip frameworkdirs linkdirs links frameworks syslinks"
     for itemname in ${itemnames}; do
         local flags=`_get_target_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}"`
         if test "x${flags}" != "x"; then
@@ -1239,6 +1250,16 @@ add_frameworkdirs()
         dir=`_path_relative ${xmake_sh_projectdir} "${dir}"`
         _add_target_item "${_xmake_sh_target_current}" "frameworkdirs" "${dir}"
     done
+}
+
+# set strip in target
+set_strip()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    local strip=${1}
+    _set_target_item "${_xmake_sh_target_current}" "strip" "${strip}"
 }
 
 # set symbols in target
