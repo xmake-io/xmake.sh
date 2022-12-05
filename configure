@@ -272,10 +272,14 @@ _find() {
     local dir=${1}
     local name=${2}
     local depth=${3}
-    if is_host "macosx"; then
-        echo `find ${dir} -depth ${depth} -name "${name}"`
+    if _test_nz "${depth}"; then
+        if is_host "macosx"; then
+            echo `find ${dir} -depth ${depth} -name "${name}"`
+        else
+            echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+        fi
     else
-        echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+        echo `find ${dir} -name "${name}"`
     fi
 }
 
@@ -1294,8 +1298,22 @@ add_files()
         if test ! -f "${file}"; then
             file="${xmake_sh_scriptdir}/${file}"
         fi
-        file=$(_path_relative ${xmake_sh_projectdir} "${file}")
-        _add_target_item "${_xmake_sh_target_current}" "files" "${file}"
+        local files=""
+        if _test_contains "${file}" "\*\*"; then
+            local dir=$(_path_directory "${file}")
+            local name=$(_path_filename "${file}")
+            files=$(_find "${dir}" ${name})
+        elif _test_contains "${file}" "\*"; then
+            local dir=$(_path_directory "${file}")
+            local name=$(_path_filename "${file}")
+            files=$(_find "${dir}" ${name} 1)
+        else
+            files="${file}"
+        fi
+        for file in ${files}; do
+            file=$(_path_relative ${xmake_sh_projectdir} "${file}")
+            _add_target_item "${_xmake_sh_target_current}" "files" "${file}"
+        done
     done
 }
 

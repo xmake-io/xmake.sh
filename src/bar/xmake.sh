@@ -2,4 +2,4 @@
 
 target "bar"
     set_kind "shared"
-    add_files "bar.cpp"
+    add_files "*.cpp"
