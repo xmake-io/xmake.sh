@@ -2129,6 +2129,33 @@ _gmake_add_build() {
     _gmake_add_build_targets
 }
 
+_gmake_add_run_target() {
+    local target=${1}
+    local targetfile=`_get_target_file "${target}"`
+    echo "\t${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
+}
+
+_gmake_add_run_targets() {
+    local targets=""
+    for target in ${_xmake_sh_targets}; do
+        local kind=`_get_target_item "${target}" "kind"`
+        if test "x${kind}" = "xbinary"; then
+            if _is_target_default "${target}"; then
+                targets="${targets} ${target}"
+            fi
+        fi
+    done
+    echo "run:${targets}" >> "${xmake_sh_projectdir}/Makefile"
+    for target in ${targets}; do
+        _gmake_add_run_target "${target}"
+    done
+    echo "" >> "${xmake_sh_projectdir}/Makefile"
+}
+
+_gmake_add_run() {
+    _gmake_add_run_targets
+}
+
 _gmake_done() {
     echo "Makefile are generated!"
 }
@@ -2141,6 +2168,7 @@ _generate_for_gmake()
     _gmake_add_toolchains
     _gmake_add_flags
     _gmake_add_build
+    _gmake_add_run
     _gmake_done
 }
 
