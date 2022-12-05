@@ -246,11 +246,11 @@ _dupch()
 _is_enabled()
 {
     local value=${1}
-    if test "x${value}" = "xtrue"; then
+    if _test_eq "${value}" "true"; then
         return 0
-    elif test "x${value}" = "xyes"; then
+    elif _test_eq "${value}" "yes"; then
         return 0
-    elif test "x${value}" = "xy"; then
+    elif _test_eq "${value}" "y"; then
         return 0
     fi
     return 1
@@ -319,7 +319,7 @@ _map_get()
     local name=${1}
     local key=${2}
     local value=$(eval echo \$_map_${name}_value_${key})
-    if test "x${value}" = "x__empty__"; then
+    if _test_eq "${value}" "__empty__"; then
         value=""
     fi
     echo ${value}
@@ -330,7 +330,7 @@ _map_has()
     local name=${1}
     local key=${2}
     local value=$(eval echo \$_map_${name}_value_${key})
-    if test "x${value}" != "x"; then
+    if _test_n "${value}"; then
         return 0
     fi
     return 1
@@ -362,7 +362,7 @@ _map_remove()
         local keys=$(eval echo \$_map_${name}_keys)
         local keys_new=""
         for k in ${keys}; do
-            if test "x${k}" != "x${key}"; then
+            if _test_nq "${k}" "${key}"; then
                 keys_new="${keys_new} ${k}"
             fi
         done
@@ -388,6 +388,9 @@ if echo "${os_host}" | grep cygwin >/dev/null 2>&1; then
     os_host="cygwin"
 fi
 if echo "${os_host}" | grep msys >/dev/null 2>&1; then
+    os_host="msys"
+fi
+if echo "${os_host}" | grep mingw >/dev/null 2>&1; then
     os_host="msys"
 fi
 if echo "${os_host}" | grep darwin >/dev/null 2>&1; then
@@ -423,6 +426,9 @@ os_arch=`uname -m | tr '[A-Z]' '[a-z]'`
 
 # set the default target platform and architecture
 _target_plat_default=${os_host}
+if is_host "msys"; then
+    _target_plat_default="mingw"
+fi
 _target_arch_default=${os_arch}
 _target_mode_default="release"
 
