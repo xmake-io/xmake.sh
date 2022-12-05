@@ -61,7 +61,7 @@ This gives you access to the [xmake-io/technical-support](https://github.com/xma
 
 ## Introduction
 
-Xmake is a script-only build utility like autotools.
+Xmake.sh is a script-only build utility like autotools.
 
 #### Advantages
 
