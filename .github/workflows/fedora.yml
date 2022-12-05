@@ -24,7 +24,6 @@ jobs:
         run: |
           uname -a
           dnf -y install gfortran
-          dnf -y install mesa-libGL-devel mesa-libGLU-devel
           dnf -y install @development-tools @rpm-development-tools
           dnf -y install copr-cli make gcc-c++ libatomic
           dnf -y upgrade git
