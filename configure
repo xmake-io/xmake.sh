@@ -597,6 +597,8 @@ _has_target_item()
     local key=${2}
     if _map_has "targets" "${name}_${key}"; then
         return 0
+    elif _map_has "targets" "__root_${key}"; then
+        return 0
     fi
     return 1
 }
@@ -606,8 +608,12 @@ _get_target_item()
 {
     local name=${1}
     local key=${2}
-    local value=`_map_get "targets" "${name}_${key}"`
-    echo ${value}
+    local values=`_map_get "targets" "${name}_${key}"`
+    if _map_has "targets" "__root_${key}"; then
+        local root_values=`_map_get "targets" "__root_${key}"`
+        values="${root_values} ${values}"
+    fi
+    echo ${values}
 }
 
 # set the given target item
@@ -619,7 +625,7 @@ _set_target_item()
     if test "x${name}" != "x"; then
         _map_set "targets" "${name}_${key}" "${value}"
     else
-        _die "please set target in the target scope!"
+        _map_set "targets" "__root_${key}" "${value}"
     fi
 }
 
@@ -634,7 +640,9 @@ _add_target_item()
         values="${values} ${value}"
         _map_set "targets" "${name}_${key}" "${values}"
     else
-        _die "please set target in the target scope!"
+        local values=`_map_get "targets" "__root_${key}"`
+        values="${values} ${value}"
+        _map_set "targets" "__root_${key}" "${values}"
     fi
 }
 
@@ -826,7 +834,7 @@ _get_target_abstract_flag_for_gcc_clang() {
                     flag="-Wl,-S"
                 fi
             elif test "x${value}" = "xall"; then
-                flag="-s"
+                flag="-Wl,-s"
             fi
             ;;
         warnings)
