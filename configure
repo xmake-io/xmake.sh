@@ -797,8 +797,9 @@ _get_target_objectfiles() {
 # get abstract flag for gcc/clang in target
 _get_target_abstract_flag_for_gcc_clang() {
     local name="${1}"
-    local itemname="${2}"
-    local value="${3}"
+    local toolname="${2}"
+    local itemname="${3}"
+    local value="${4}"
     local flag=""
     case "${itemname}" in
         defines) flag="-D${value}";;
@@ -807,6 +808,96 @@ _get_target_abstract_flag_for_gcc_clang() {
         linkdirs) flag="-L${value}";;
         links) flag="-l${value}";;
         syslinks) flag="-l${value}";;
+        frameworks) flag="-framework ${value}";;
+        frameworkdirs) flag="-F${value}";;
+        symbols)
+            if test "x${value}" = "xdebug"; then
+                flag="-g"
+            elif test "x${value}" = "xhidden"; then
+                flag="-fvisibility=hidden"
+            fi
+            ;;
+        warnings)
+            if test "x${value}" = "xall" -o "x${value}" = "xmore" -o "x${value}" = "xless"; then
+                flag="-Wall"
+            elif test "x${value}" = "xallextra"; then
+                flag="-Wall -Wextra"
+            elif test "x${value}" = "xerror"; then
+                flag="-Werror"
+            elif test "x${value}" = "xeverything"; then
+                flag="-Wall -Wextra"
+            elif test "x${value}" = "xnone"; then
+                flag="-w"
+            fi
+            ;;
+        optimizes)
+            if test "x${value}" = "xfast"; then
+                flag="-O1"
+            elif test "x${value}" = "xfaster"; then
+                flag="-O2"
+            elif test "x${value}" = "xfastest"; then
+                flag="-O3"
+            elif test "x${value}" = "xsmallest"; then
+                if test "x${toolname}" = "xclang" -o "x{toolname}" = "xclangxx"; then
+                    flag="-Oz"
+                else
+                    flag="-Os"
+                fi
+            elif test "x${value}" = "xaggressive"; then
+                flag="-Ofast"
+            elif test "x${value}" = "xnone"; then
+                flag="-O0"
+            fi
+            ;;
+        languages)
+            case "${value}" in
+                ansi) flag="-ansi";;
+                c89) flag="-std=c89";;
+                gnu89) flag="-std=gnu89";;
+                c99) flag="-std=c99";;
+                gnu99) flag="-std=gnu99";;
+                c11) flag="-std=c11";;
+                gnu11) flag="-std=gnu11";;
+                c17) flag="-std=c17";;
+                gnu17) flag="-std=gnu17";;
+
+                cxx98) flag="-std=c++98";;
+                c++98) flag="-std=c++98";;
+                gnuxx98) flag="-std=gnu++98";;
+                gnu++98) flag="-std=gnu++98";;
+
+                cxx11) flag="-std=c++11";;
+                c++11) flag="-std=c++11";;
+                gnuxx11) flag="-std=gnu++11";;
+                gnu++11) flag="-std=gnu++11";;
+
+                cxx14) flag="-std=c++14";;
+                c++14) flag="-std=c++14";;
+                gnuxx14) flag="-std=gnu++14";;
+                gnu++14) flag="-std=gnu++14";;
+
+                cxx17) flag="-std=c++17";;
+                c++17) flag="-std=c++17";;
+                gnuxx17) flag="-std=gnu++17";;
+                gnu++17) flag="-std=gnu++17";;
+
+                cxx1z) flag="-std=c++1z";;
+                c++1z) flag="-std=c++1z";;
+                gnuxx1z) flag="-std=gnu++1z";;
+                gnu++1z) flag="-std=gnu++1z";;
+
+                cxx2a) flag="-std=c++2a";;
+                c++2a) flag="-std=c++2a";;
+                gnuxx2a) flag="-std=gnu++2a";;
+                gnu++2a) flag="-std=gnu++2a";;
+
+                cxx20) flag="-std=c++20";;
+                c++20) flag="-std=c++20";;
+                gnuxx20) flag="-std=gnu++20";;
+                gnu++20) flag="-std=gnu++20";;
+                *) _die "unknown language value(${value})!" ;;
+            esac
+            ;;
         *) _die "unknown itemname(${itemname})!" ;;
     esac
     echo "${flag}"
@@ -825,10 +916,10 @@ _get_target_abstract_flags() {
     for value in ${values}; do
         local flag=""
         case "${toolname}" in
-            gcc) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${itemname}" "${value}"`;;
-            gxx) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${itemname}" "${value}"`;;
-            clang) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${itemname}" "${value}"`;;
-            clangxx) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${itemname}" "${value}"`;;
+            gcc) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${toolname}" "${itemname}" "${value}"`;;
+            gxx) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${toolname}" "${itemname}" "${value}"`;;
+            clang) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${toolname}" "${itemname}" "${value}"`;;
+            clangxx) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${toolname}" "${itemname}" "${value}"`;;
             *) _die "unknown toolname(${toolname})!" ;;
         esac
         if test "x${flag}" != "x"; then
@@ -847,7 +938,7 @@ _get_target_compiler_flags() {
     local result=""
 
     # get abstract flags
-    local itemnames="defines undefines includedirs"
+    local itemnames="symbols optimizes warnings languages defines undefines includedirs frameworkdirs frameworks"
     for itemname in ${itemnames}; do
         local flags=`_get_target_abstract_flags "${name}" "${toolname}" "${itemname}"`
         if test "x${flags}" != "x"; then
@@ -876,7 +967,7 @@ _get_target_linker_flags() {
     local deps=`_get_target_item "${name}" "deps"`
     for dep in ${deps}; do
         local dep_kind=`_get_target_item "${dep}" "kind"`
-        if test "x${dep_kind}" = "xstatic" || "x${dep_kind}" = "xshared"; then
+        if test "x${dep_kind}" = "xstatic" -o "x${dep_kind}" = "xshared"; then
             local dep_targetdir=`_get_targetdir "${dep}"`
             local dep_basename=`_get_target_basename "${dep}"`
             local linkdirs_flags=`_get_target_abstract_flags "${dep}" "${toolname}" "linkdirs" "${dep_targetdir}"`
@@ -886,7 +977,7 @@ _get_target_linker_flags() {
     done
 
     # get abstract flags
-    local itemnames="linkdirs links syslinks"
+    local itemnames="frameworkdirs linkdirs links frameworks syslinks"
     for itemname in ${itemnames}; do
         local flags=`_get_target_abstract_flags "${name}" "${toolname}" "${itemname}"`
         if test "x${flags}" != "x"; then
@@ -1115,6 +1206,72 @@ add_linkdirs()
         dir=`_path_relative ${xmake_sh_projectdir} "${dir}"`
         _add_target_item "${_xmake_sh_target_current}" "linkdirs" "${dir}"
     done
+}
+
+# add frameworks in target
+add_frameworks()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for framework in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "frameworks" "${framework}"
+    done
+}
+
+# add frameworkdirs in target
+add_frameworkdirs()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for dir in $@; do
+        if test ! -d "${dir}"; then
+            dir="${xmake_sh_scriptdir}/${dir}"
+        fi
+        dir=`_path_relative ${xmake_sh_projectdir} "${dir}"`
+        _add_target_item "${_xmake_sh_target_current}" "frameworkdirs" "${dir}"
+    done
+}
+
+# set symbols in target
+set_symbols()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    local symbols="${1}"
+    _set_target_item "${_xmake_sh_target_current}" "symbols" "${symbols}"
+}
+
+# set languages in target
+set_languages()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    local languages="${@}"
+    _set_target_item "${_xmake_sh_target_current}" "languages" "${languages}"
+}
+
+# set warnings in target
+set_warnings()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    local warnings="${@}"
+    _set_target_item "${_xmake_sh_target_current}" "warnings" "${warnings}"
+}
+
+# set optimizes in target
+set_optimizes()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    local optimizes="${@}"
+    _set_target_item "${_xmake_sh_target_current}" "optimizes" "${optimizes}"
 }
 
 # add cflags in target
