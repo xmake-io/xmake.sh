@@ -32,5 +32,6 @@ jobs:
           prepare: pkg install -y git curl unzip gmake llvm gsed bash perl5 openssl
           run: |
             ./configure
+            make
 
 

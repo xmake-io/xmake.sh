@@ -36,3 +36,4 @@ jobs:
       - name: Tests
         run: |
           ./configure
+          make
