@@ -804,6 +804,9 @@ _get_target_abstract_flag_for_gcc_clang() {
         defines) flag="-D${value}";;
         udefines) flag="-U${value}";;
         includedirs) flag="-I${value}";;
+        linkdirs) flag="-L${value}";;
+        links) flag="-l${value}";;
+        syslinks) flag="-l${value}";;
         *) _die "unknown itemname(${itemname})!" ;;
     esac
     echo "${flag}"
@@ -814,7 +817,10 @@ _get_target_abstract_flags() {
     local name="${1}"
     local toolname="${2}"
     local itemname="${3}"
-    local values=`_get_target_item "${name}" "${itemname}"`
+    local values="${4}"
+    if test "x${values}" = "x"; then
+        values=`_get_target_item "${name}" "${itemname}"`
+    fi
     local flags=""
     for value in ${values}; do
         local flag=""
@@ -865,6 +871,19 @@ _get_target_linker_flags() {
     local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
     local toolname=`_path_toolname "${program}"`
     local result=""
+
+    # get flags from target deps
+    local deps=`_get_target_item "${name}" "deps"`
+    for dep in ${deps}; do
+        local dep_kind=`_get_target_item "${dep}" "kind"`
+        if test "x${dep_kind}" = "xstatic" || "x${dep_kind}" = "xshared"; then
+            local dep_targetdir=`_get_targetdir "${dep}"`
+            local dep_basename=`_get_target_basename "${dep}"`
+            local linkdirs_flags=`_get_target_abstract_flags "${dep}" "${toolname}" "linkdirs" "${dep_targetdir}"`
+            local links_flags=`_get_target_abstract_flags "${dep}" "${toolname}" "links" "${dep_basename}"`
+            result="${result} ${linkdirs_flags} ${links_flags}"
+        fi
+    done
 
     # get abstract flags
     local itemnames="linkdirs links syslinks"
