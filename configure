@@ -59,6 +59,60 @@ _dprint()
     fi
 }
 
+# test empty string
+_test_z()
+{
+    if test "x${1}" = "x"; then
+        return 0
+    fi
+    return 1
+}
+
+# test non-empty string
+_test_n()
+{
+    if test "x${1}" != "x"; then
+        return 0
+    fi
+    return 1
+}
+
+# test string is equal
+_test_eq()
+{
+    if test "x${1}" = "x${2}"; then
+        return 0
+    fi
+    return 1
+}
+
+# test string is not equal
+_test_nq()
+{
+    if test "x${1}" != "x${2}"; then
+        return 0
+    fi
+    return 1
+}
+
+# try run program
+_try_run_program()
+{
+    local program="${1}"
+    local argv="${2}"
+    if ${xmake_sh_diagnosis}; then
+        echo "try running: ${program}" "${argv}"
+        "${program}" "${argv}"
+    else
+        "${program}" "${argv}" >/dev/null 2>&1
+    fi
+    local ok=$?
+    if test "${ok}" -ne "0"; then
+        return 1
+    fi
+    return 0
+}
+
 _path_filename() {
     local filename=`basename -- "${1}"`
     echo "${filename}"
@@ -81,11 +135,44 @@ _path_directory() {
     echo "${dirname}"
 }
 
+# get relative path, e.g `_path_relative ${rootdir} ${absolute_path}`
 _path_relative() {
-    local rootdir="${1}"
-    local absolute_path="${2}"
-    local relative_path=`realpath --relative-to=${rootdir} "${absolute_path}"`
-    echo "${relative_path}"
+    local source=$1
+    local target=$2
+
+    local common_part=$source
+    local result=""
+
+    while _test_eq "${target#$common_part}" "${target}"; do
+        # no match, means that candidate common part is not correct
+        # go up one level (reduce common part)
+        common_part="$(dirname -- $common_part)"
+        # and record that we went back, with correct / handling
+        if _test_z $result; then
+            result=".."
+        else
+            result="../$result"
+        fi
+    done
+
+    if _test_eq $common_part "/"; then
+        # special case for root (no common path)
+        result="$result/"
+    fi
+
+    # since we now have identified the common part,
+    # compute the non-common part
+    local forward_part="${target#$common_part}"
+
+    # and now stick all parts together
+    if _test_n $result && _test_n $forward_part; then
+        result="$result$forward_part"
+    elif _test_n $forward_part; then
+        # remote extra '/', e.g. "/xxx" => "xxx"
+        result="${forward_part#*/}"
+    fi
+
+    echo $result
 }
 
 _path_extension_replace() {
@@ -180,24 +267,6 @@ _find() {
     else
         echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
     fi
-}
-
-# try run program
-_try_run_program()
-{
-    local program="${1}"
-    local argv="${2}"
-    if ${xmake_sh_diagnosis}; then
-        echo "try running: ${program}" "${argv}"
-        "${program}" "${argv}"
-    else
-        "${program}" "${argv}" >/dev/null 2>&1
-    fi
-    local ok=$?
-    if test "${ok}" -ne "0"; then
-        return 1
-    fi
-    return 0
 }
 
 #-----------------------------------------------------------------------------
