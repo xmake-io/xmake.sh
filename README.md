@@ -162,6 +162,13 @@ $ make run
   - [x] add_linkdirs
   - [x] add_links
   - [x] add_syslinks
+  - [x] set_strip
+  - [x] set_symbols
+  - [x] set_languages
+  - [x] set_warnings
+  - [x] set_optmizes
+  - [x] add_frameworks
+  - [x] add_frameworkdirs
   - [x] add_cflags
   - [ ] add_cxflags
   - [x] add_cxxflags
