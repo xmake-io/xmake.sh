@@ -116,13 +116,13 @@ _path_filename() {
 }
 
 _path_extension() {
-    local filename=`_path_filename "${1}"`
+    local filename=$(_path_filename "${1}")
     local extension="${filename##*.}"
     echo ".${extension}"
 }
 
 _path_basename() {
-    local filename=`_path_filename "${1}"`
+    local filename=$(_path_filename "${1}")
     local basename="${filename%.*}"
     echo "${basename}"
 }
@@ -177,7 +177,7 @@ _path_extension_replace() {
 }
 
 _path_sourcekind() {
-    local extension=`_path_extension "${1}"`
+    local extension=$(_path_extension "${1}")
     case "${extension}" in
         .c) sourcekind="cc";;
         .cpp) sourcekind="cxx";;
@@ -194,7 +194,7 @@ _path_sourcekind() {
 }
 
 _path_toolname() {
-    local basename=`_path_basename "${1}"`
+    local basename=$(_path_basename "${1}")
     local toolname=""
     case "${basename}" in
         *-gcc) toolname="gcc";;
@@ -279,21 +279,21 @@ _find() {
 # _map_set "options" "key3" "value3"
 # _map_set "options" "key4" "__empty__"
 # _map_set "options" "key4" "__empty__"
-# _count=`_map_count "options"`
-# _keys=`_map_keys "options"`
+# _count=$(_map_count "options")
+# _keys=$(_map_keys "options")
 # echo ${_count}
 # for key in ${_keys}; do
-#     value=`_map_get "options" ${key}`
+#     value=$(_map_get "options" ${key})
 #     echo ${key} "->" ${value}
 # done
 #
 # echo "------"
 # _map_remove "options" "key3"
-# _count=`_map_count "options"`
-# _keys=`_map_keys "options"`
+# _count=$(_map_count "options")
+# _keys=$(_map_keys "options")
 # echo ${_count}
 # for key in ${_keys}; do
-#     value=`_map_get "options" ${key}`
+#     value=$(_map_get "options" ${key})
 #     echo ${key} "->" ${value}
 # done
 #
@@ -339,7 +339,7 @@ _map_set()
     local key=${2}
     local value=${3}
     if ! _map_has ${name} ${key}; then
-        local count=`_map_count "options"`
+        local count=$(_map_count "options")
         eval _map_${name}_count=$((${count} + 1))
         local keys=$(eval echo \$_map_${name}_keys)
         keys="${keys} ${key}"
@@ -353,7 +353,7 @@ _map_remove()
     local name=${1}
     local key=${2}
     if _map_has ${name} ${key}; then
-        local count=`_map_count "options"`
+        local count=$(_map_count "options")
         eval _map_${name}_count=$((${count} - 1))
         eval _map_${name}_value_${key}=""
         local keys=$(eval echo \$_map_${name}_keys)
@@ -380,7 +380,7 @@ _map_keys()
 
 # detect hosts
 os_host=`uname`
-os_host=`_tolower ${os_host}`
+os_host=$(_tolower ${os_host})
 if echo "${os_host}" | grep cygwin >/dev/null 2>&1; then
     os_host="cygwin"
 fi
@@ -565,7 +565,7 @@ _get_option_item()
 {
     local name=${1}
     local key=${2}
-    local value=`_map_get "options" "${name}_${key}"`
+    local value=$(_map_get "options" "${name}_${key}")
     echo ${value}
 }
 
@@ -586,9 +586,9 @@ _set_option_item()
 _get_option_value()
 {
     local name=${1}
-    local value=`_get_option_item "${name}" "value"`
+    local value=$(_get_option_item "${name}" "value")
     if test "x${value}" = "x"; then
-        value=`_get_option_item "${name}" "default"`
+        value=$(_get_option_item "${name}" "default")
     fi
     echo ${value}
 }
@@ -609,7 +609,7 @@ is_config()
     fi
     local name=${1}
     local value=${2}
-    local value_cur=`_get_option_value "${name}"`
+    local value_cur=$(_get_option_value "${name}")
     if test "x${value_cur}" = "x${value}"; then
         return 0
     fi
@@ -623,7 +623,7 @@ has_config()
         return 1
     fi
     local name=${1}
-    local value_cur=`_get_option_value "${name}"`
+    local value_cur=$(_get_option_value "${name}")
     if _is_enabled ${value_cur}; then
         return 0
     fi
@@ -680,9 +680,9 @@ _get_target_item()
 {
     local name=${1}
     local key=${2}
-    local values=`_map_get "targets" "${name}_${key}"`
+    local values=$(_map_get "targets" "${name}_${key}")
     if _map_has "targets" "__root_${key}"; then
-        local root_values=`_map_get "targets" "__root_${key}"`
+        local root_values=$(_map_get "targets" "__root_${key}")
         values="${root_values} ${values}"
     fi
     echo ${values}
@@ -708,11 +708,11 @@ _add_target_item()
     local key=${2}
     local value=${3}
     if test "x${name}" != "x"; then
-        local values=`_map_get "targets" "${name}_${key}"`
+        local values=$(_map_get "targets" "${name}_${key}")
         values="${values} ${value}"
         _map_set "targets" "${name}_${key}" "${values}"
     else
-        local values=`_map_get "targets" "__root_${key}"`
+        local values=$(_map_get "targets" "__root_${key}")
         values="${values} ${value}"
         _map_set "targets" "__root_${key}" "${values}"
     fi
@@ -722,7 +722,7 @@ _add_target_item()
 _is_target_default() {
     local name="${1}"
     if _has_target_item "${name}" "default"; then
-        local default=`_get_target_item "${target}" "default"`
+        local default=$(_get_target_item "${target}" "default")
         if _is_enabled ${default}; then
             return 0
         fi
@@ -736,7 +736,7 @@ _get_target_basename() {
     local name="${1}"
     local basename="${name}"
     if _has_target_item "${name}" "basename"; then
-        basename=`_get_target_item "${name}" "basename"`
+        basename=$(_get_target_item "${name}" "basename")
     fi
     echo "${basename}"
 }
@@ -746,9 +746,9 @@ _get_target_extension() {
     local name="${1}"
     local extension=""
     if _has_target_item "${name}" "extension"; then
-        extension=`_get_target_item "${name}" "extension"`
+        extension=$(_get_target_item "${name}" "extension")
     elif is_plat "mingw"; then
-        local kind=`_get_target_item "${name}" "kind"`
+        local kind=$(_get_target_item "${name}" "kind")
         if test "x${kind}" = "xbinary"; then
             extension=".exe"
         elif test "x${kind}" = "xstatic"; then
@@ -757,7 +757,7 @@ _get_target_extension() {
             extension=".dll"
         fi
     else
-        local kind=`_get_target_item "${name}" "kind"`
+        local kind=$(_get_target_item "${name}" "kind")
         if test "x${kind}" = "xstatic"; then
             extension=".a"
         elif test "x${kind}" = "xshared"; then
@@ -772,16 +772,16 @@ _get_target_prefixname() {
     local name="${1}"
     local prefixname=""
     if _has_target_item "${name}" "prefixname"; then
-        prefixname=`_get_target_item "${name}" "prefixname"`
+        prefixname=$(_get_target_item "${name}" "prefixname")
     elif is_plat "mingw"; then
-        local kind=`_get_target_item "${name}" "kind"`
+        local kind=$(_get_target_item "${name}" "kind")
         if test "x${kind}" = "xstatic"; then
             prefixname="lib"
         elif test "x${kind}" = "xshared"; then
             prefixname="lib"
         fi
     else
-        local kind=`_get_target_item "${name}" "kind"`
+        local kind=$(_get_target_item "${name}" "kind")
         if test "x${kind}" = "xstatic"; then
             prefixname="lib"
         elif test "x${kind}" = "xshared"; then
@@ -795,11 +795,11 @@ _get_target_prefixname() {
 _get_target_filename() {
     local name="${1}"
     local filename=""
-    local basename=`_get_target_basename "${name}"`
-    local extension=`_get_target_extension "${name}"`
-    local prefixname=`_get_target_prefixname "${name}"`
+    local basename=$(_get_target_basename "${name}")
+    local extension=$(_get_target_extension "${name}")
+    local prefixname=$(_get_target_prefixname "${name}")
     if _has_target_item "${name}" "filename"; then
-        filename=`_get_target_item "${name}" "filename"`
+        filename=$(_get_target_item "${name}" "filename")
     else
         filename="${prefixname}${basename}${extension}"
     fi
@@ -811,7 +811,7 @@ _get_targetdir() {
     local name="${1}"
     local targetdir=""
     if _has_target_item "${name}" "targetdir"; then
-        targetdir=`_get_target_item "${name}" "targetdir"`
+        targetdir=$(_get_target_item "${name}" "targetdir")
     else
         targetdir="${xmake_sh_buildir}/${_target_plat}/${_target_arch}/${_target_mode}"
     fi
@@ -823,7 +823,7 @@ _get_target_objectdir() {
     local name="${1}"
     local objectdir=""
     if _has_target_item "${name}" "objectdir"; then
-        objectdir=`_get_target_item "${name}" "objectdir"`
+        objectdir=$(_get_target_item "${name}" "objectdir")
     else
         objectdir="${xmake_sh_buildir}/.objs/${name}/${_target_plat}/${_target_arch}/${_target_mode}"
     fi
@@ -834,8 +834,8 @@ _get_target_objectdir() {
 _get_target_file()
 {
     local name="${1}"
-    local filename=`_get_target_filename "${name}"`
-    local targetdir=`_get_targetdir "${name}"`
+    local filename=$(_get_target_filename "${name}")
+    local targetdir=$(_get_targetdir "${name}")
     local targetfile="${targetdir}/${filename}"
     echo "${targetfile}"
 }
@@ -843,7 +843,7 @@ _get_target_file()
 # get sourcefiles in target
 _get_target_sourcefiles() {
     local name="${1}"
-    local sourcefiles=`_get_target_item "${name}" "files"`
+    local sourcefiles=$(_get_target_item "${name}" "files")
     echo "${sourcefiles}"
 }
 
@@ -851,13 +851,13 @@ _get_target_sourcefiles() {
 _get_target_objectfile() {
     local name="${1}"
     local sourcefile="${2}"
-    local filename=`_path_filename "${sourcefile}"`
+    local filename=$(_path_filename "${sourcefile}")
     local extension=".o"
     if is_plat "mingw"; then
         extension=".obj"
     fi
-    filename=`_path_extension_replace "${filename}" "${extension}"`
-    local objectdir=`_get_target_objectdir "${name}"`
+    filename=$(_path_extension_replace "${filename}" "${extension}")
+    local objectdir=$(_get_target_objectdir "${name}")
     local objectfile="${objectdir}/${filename}"
     echo "${objectfile}"
 }
@@ -865,10 +865,10 @@ _get_target_objectfile() {
 # get objectfiles in target
 _get_target_objectfiles() {
     local name="${1}"
-    local sourcefiles=`_get_target_sourcefiles "${name}"`
+    local sourcefiles=$(_get_target_sourcefiles "${name}")
     local objectfiles=""
     for sourcefile in ${sourcefiles}; do
-        local objectfile=`_get_target_objectfile "${name}" "${sourcefile}"`
+        local objectfile=$(_get_target_objectfile "${name}" "${sourcefile}")
         objectfiles="${objectfiles} ${objectfile}"
     done
     echo "${objectfiles}"
@@ -1008,16 +1008,16 @@ _get_target_abstract_flags() {
     local itemname="${4}"
     local values="${5}"
     if test "x${values}" = "x"; then
-        values=`_get_target_item "${name}" "${itemname}"`
+        values=$(_get_target_item "${name}" "${itemname}")
     fi
     local flags=""
     for value in ${values}; do
         local flag=""
         case "${toolname}" in
-            gcc) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}"`;;
-            gxx) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}"`;;
-            clang) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}"`;;
-            clangxx) flag=`_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}"`;;
+            gcc) flag=$(_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}");;
+            gxx) flag=$(_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}");;
+            clang) flag=$(_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}");;
+            clangxx) flag=$(_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}");;
             *) _die "unknown toolname(${toolname})!" ;;
         esac
         if test "x${flag}" != "x"; then
@@ -1031,22 +1031,22 @@ _get_target_abstract_flags() {
 _get_target_compiler_flags() {
     local name="${1}"
     local toolkind="${2}"
-    local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
-    local toolname=`_path_toolname "${program}"`
+    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
+    local toolname=$(_path_toolname "${program}")
     local result=""
 
     # get abstract flags
     local itemnames="symbols optimizes warnings languages defines undefines includedirs frameworkdirs frameworks"
     for itemname in ${itemnames}; do
-        local flags=`_get_target_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}"`
+        local flags=$(_get_target_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}")
         if test "x${flags}" != "x"; then
             result="${result} ${flags}"
         fi
     done
 
     # get raw flags, e.g. add_cflags, add_cxxflags
-    local flagname=`_get_flagname "${toolkind}"`
-    local flags=`_get_target_item "${name}" "${flagname}"`
+    local flagname=$(_get_flagname "${toolkind}")
+    local flags=$(_get_target_item "${name}" "${flagname}")
     if test "x${flags}" != "x"; then
         result="${result} ${flags}"
     fi
@@ -1057,14 +1057,14 @@ _get_target_compiler_flags() {
 _get_target_linker_flags() {
     local name="${1}"
     local toolkind="${2}"
-    local program=`_get_toolchain_toolset "${_target_toolchain}" "${toolkind}"`
-    local toolname=`_path_toolname "${program}"`
+    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
+    local toolname=$(_path_toolname "${program}")
     local result=""
 
     # get flags from target deps
-    local deps=`_get_target_item "${name}" "deps"`
+    local deps=$(_get_target_item "${name}" "deps")
     for dep in ${deps}; do
-        local dep_kind=`_get_target_item "${dep}" "kind"`
+        local dep_kind=$(_get_target_item "${dep}" "kind")
         if test "x${dep_kind}" = "xstatic" -o "x${dep_kind}" = "xshared"; then
             local dep_targetdir=`_get_targetdir "${dep}"`
             local dep_basename=`_get_target_basename "${dep}"`
