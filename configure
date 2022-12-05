@@ -834,7 +834,7 @@ _get_target_abstract_flag_for_gcc_clang() {
                     flag="-Wl,-S"
                 fi
             elif test "x${value}" = "xall"; then
-                flag="-Wl,-s"
+                flag="-s"
             fi
             ;;
         warnings)
