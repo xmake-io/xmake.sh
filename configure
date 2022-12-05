@@ -1107,6 +1107,17 @@ _get_target_compiler_flags() {
     if _test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
+    if _test_eq "${flagname}" "cflags" || _test_eq "${flagname}" "cxxflags"; then
+        flags=$(_get_target_item "${name}" "cxflags")
+        if _test_nz "${flags}"; then
+            result="${result} ${flags}"
+        fi
+    elif _test_eq "${flagname}" "mflags" || _test_eq "${flagname}" "mxxflags"; then
+        flags=$(_get_target_item "${name}" "mxflags")
+        if _test_nz "${flags}"; then
+            result="${result} ${flags}"
+        fi
+    fi
     echo "${result}"
 }
 
@@ -1478,6 +1489,17 @@ add_cflags()
     done
 }
 
+# add cxflags in target
+add_cxflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "cxflags" "${flag}"
+    done
+}
+
 # add cxxflags in target
 add_cxxflags()
 {
@@ -1508,6 +1530,17 @@ add_mflags()
     fi
     for flag in $@; do
         _add_target_item "${_xmake_sh_target_current}" "mflags" "${flag}"
+    done
+}
+
+# add mxflags in target
+add_mxflags()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for flag in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "mxflags" "${flag}"
     done
 }
 

@@ -181,10 +181,10 @@ $ make run
   - [x] add_frameworks
   - [x] add_frameworkdirs
   - [x] add_cflags
-  - [ ] add_cxflags
+  - [x] add_cxflags
   - [x] add_cxxflags
   - [x] add_mflags
-  - [ ] add_mxflags
+  - [x] add_mxflags
   - [x] add_mxxflags
   - [x] add_asflags
   - [x] add_ldflags
