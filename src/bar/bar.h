@@ -2,7 +2,7 @@
 extern "C" {
 #endif
 
-int sub(int a, int b);
+__attribute__((visibility("default"))) int sub(int a, int b);
 
 #ifdef __cplusplus
 }

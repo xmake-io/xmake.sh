@@ -69,7 +69,7 @@ _test_z() {
 }
 
 # test non-empty string
-_test_n() {
+_test_nz() {
     if test "x${1}" != "x"; then
         return 0
     fi
@@ -162,9 +162,9 @@ _path_relative() {
     local forward_part="${target#$common_part}"
 
     # and now stick all parts together
-    if _test_n $result && _test_n $forward_part; then
+    if _test_nz $result && _test_nz $forward_part; then
         result="$result$forward_part"
-    elif _test_n $forward_part; then
+    elif _test_nz $forward_part; then
         # remote extra '/', e.g. "/xxx" => "xxx"
         result="${forward_part#*/}"
     fi
@@ -327,7 +327,7 @@ _map_has()
     local name=${1}
     local key=${2}
     local value=$(eval echo \$_map_${name}_value_${key})
-    if _test_n "${value}"; then
+    if _test_nz "${value}"; then
         return 0
     fi
     return 1
@@ -1027,6 +1027,40 @@ _get_target_abstract_flags() {
     echo "${flags}"
 }
 
+# get toolchain flags for ar in target
+_get_target_toolchain_flags_for_ar() {
+    echo "-cr"
+}
+
+# get toolchain flags for gcc/clang in target
+_get_target_toolchain_flags_for_gcc_clang() {
+    local name="${1}"
+    local toolkind="${2}"
+    local flags=""
+    local targetkind=$(_get_target_item "${name}" "kind")
+    if _test_eq "${targetkind}" "shared" && _test_eq "${toolkind}" "sh"; then
+        flags="-shared -fPIC"
+    fi
+    echo "${flags}"
+}
+
+# get toolchain flags in target
+_get_target_toolchain_flags() {
+    local name="${1}"
+    local toolkind="${2}"
+    local toolname="${3}"
+    local flags=""
+    case "${toolname}" in
+        gcc) flags=$(_get_target_toolchain_flags_for_gcc_clang "${name}" "${toolkind}");;
+        gxx) flags=$(_get_target_toolchain_flags_for_gcc_clang "${name}" "${toolkind}");;
+        clang) flags=$(_get_target_toolchain_flags_for_gcc_clang "${name}" "${toolkind}");;
+        clangxx) flags=$(_get_target_toolchain_flags_for_gcc_clang "${name}" "${toolkind}");;
+        ar) flags=$(_get_target_toolchain_flags_for_ar "${name}" "${toolkind}");;
+        *) _die "unknown toolname(${toolname})!" ;;
+    esac
+    echo "${flags}"
+}
+
 # get compiler flags in target
 _get_target_compiler_flags() {
     local name="${1}"
@@ -1035,11 +1069,17 @@ _get_target_compiler_flags() {
     local toolname=$(_path_toolname "${program}")
     local result=""
 
+    # get toolchain flags
+    local toolchain_flags=$(_get_target_toolchain_flags "${name}" "${toolkind}" "${toolname}")
+    if _test_nz "${toolchain_flags}"; then
+        result="${result} ${toolchain_flags}"
+    fi
+
     # get abstract flags
     local itemnames="symbols optimizes warnings languages defines undefines includedirs frameworkdirs frameworks"
     for itemname in ${itemnames}; do
         local flags=$(_get_target_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}")
-        if test "x${flags}" != "x"; then
+        if _test_nz "${flags}"; then
             result="${result} ${flags}"
         fi
     done
@@ -1047,7 +1087,7 @@ _get_target_compiler_flags() {
     # get raw flags, e.g. add_cflags, add_cxxflags
     local flagname=$(_get_flagname "${toolkind}")
     local flags=$(_get_target_item "${name}" "${flagname}")
-    if test "x${flags}" != "x"; then
+    if _test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
     echo "${result}"
@@ -1061,11 +1101,17 @@ _get_target_linker_flags() {
     local toolname=$(_path_toolname "${program}")
     local result=""
 
+    # get toolchain flags
+    local toolchain_flags=$(_get_target_toolchain_flags "${name}" "${toolkind}" "${toolname}")
+    if _test_nz "${toolchain_flags}"; then
+        result="${result} ${toolchain_flags}"
+    fi
+
     # get flags from target deps
     local deps=$(_get_target_item "${name}" "deps")
     for dep in ${deps}; do
         local dep_kind=$(_get_target_item "${dep}" "kind")
-        if _test_eq "${dep_kind}" "static" || _test_eq "${dep_kind}" = "shared"; then
+        if _test_eq "${dep_kind}" "static" || _test_eq "${dep_kind}" "shared"; then
             local dep_targetdir=$(_get_targetdir "${dep}")
             local dep_basename=$(_get_target_basename "${dep}")
             local linkdirs_flags=$(_get_target_abstract_flags "${dep}" "${toolkind}" "${toolname}" "linkdirs" "${dep_targetdir}")
@@ -1078,7 +1124,7 @@ _get_target_linker_flags() {
     local itemnames="strip frameworkdirs linkdirs links frameworks syslinks"
     for itemname in ${itemnames}; do
         local flags=$(_get_target_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}")
-        if test "x${flags}" != "x"; then
+        if _test_nz "${flags}"; then
             result="${result} ${flags}"
         fi
     done
@@ -1086,9 +1132,10 @@ _get_target_linker_flags() {
     # get raw flags, e.g. add_ldflags, add_shflags
     local flagname=$(_get_flagname "${toolkind}")
     local flags=$(_get_target_item "${name}" "${flagname}")
-    if test "x${flags}" != "x"; then
+    if _test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
+
     echo "${result}"
 }
 
@@ -1098,14 +1145,21 @@ _get_target_archiver_flags() {
     local toolkind="${2}"
     local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
     local toolname=$(_path_toolname "${program}")
-    local result="-cr"
+    local result=""
+
+    # get toolchain flags
+    local toolchain_flags=$(_get_target_toolchain_flags "${name}" "${toolkind}" "${toolname}")
+    if _test_nz "${toolchain_flags}"; then
+        result="${result} ${toolchain_flags}"
+    fi
 
     # get raw flags, e.g. add_arflags
     local flagname=$(_get_flagname "${toolkind}")
     local flags=$(_get_target_item "${name}" "${flagname}")
-    if test "x${flags}" != "x"; then
+    if _test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
+
     echo "${result}"
 }
 
@@ -2208,7 +2262,7 @@ _gmake_add_build() {
 _gmake_add_run_target() {
     local target=${1}
     local targetfile=$(_get_target_file "${target}")
-    _eprint "\t${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
+    _eprint "\t@${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_run_targets() {
