@@ -947,6 +947,16 @@ _get_target_abstract_flag_for_gcc_clang() {
         syslinks) flag="-l${value}";;
         frameworks) flag="-framework ${value}";;
         frameworkdirs) flag="-F${value}";;
+        rpathdirs)
+            if _test_eq "${toolname}" "gcc" || _test_eq "${toolname}" "gxx"; then
+                # escape $ORIGIN in makefile, TODO we need also handle it for ninja
+                value=$(_replace "${value}" "@loader_path" '$$ORIGIN')
+                flag="-Wl,-rpath='${value}'"
+            elif _test_eq "${toolname}" "clang" || _test_eq "${toolname}" "clangxx"; then
+                value=$(_replace "${value}" "\$ORIGIN" "@loader_path")
+                flag="-Xlinker -rpath -Xlinker ${value}"
+            fi
+            ;;
         symbols)
             if _test_eq "${value}" "debug"; then
                 flag="-g"
@@ -1183,12 +1193,22 @@ _get_target_linker_flags() {
             local dep_basename=$(_get_target_basename "${dep}")
             local linkdirs_flags=$(_get_target_abstract_flags "${dep}" "${toolkind}" "${toolname}" "linkdirs" "${dep_targetdir}")
             local links_flags=$(_get_target_abstract_flags "${dep}" "${toolkind}" "${toolname}" "links" "${dep_basename}")
+            if _test_eq "${dep_kind}" "shared"; then
+                local rpathdir="@loader_path"
+                local targetdir=$(_get_targetdir "${name}")
+                local subdir=$(_path_relative "${targetdir}" "${dep_targetdir}")
+                if _test_nz "${subdir}"; then
+                    rpathdir="${rpathdir}/${subdir}"
+                fi
+                local rpathdirs_flags=$(_get_target_abstract_flags "${dep}" "${toolkind}" "${toolname}" "rpathdirs" "${rpathdir}")
+                result="${result} ${rpathdirs_flags}"
+            fi
             result="${result} ${linkdirs_flags} ${links_flags}"
         fi
     done
 
     # get abstract flags
-    local itemnames="strip frameworkdirs linkdirs links frameworks syslinks"
+    local itemnames="strip frameworkdirs linkdirs links rpathdirs frameworks syslinks"
     for itemname in ${itemnames}; do
         local flags=$(_get_target_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}")
         if _test_nz "${flags}"; then
@@ -1441,6 +1461,21 @@ add_linkdirs()
         fi
         dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
         _add_target_item "${_xmake_sh_target_current}" "linkdirs" "${dir}"
+    done
+}
+
+# add rpathdirs in target
+add_rpathdirs()
+{
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for dir in $@; do
+        if ! _path_is_absolute "${dir}"; then
+            dir="${xmake_sh_scriptdir}/${dir}"
+        fi
+        dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
+        _add_target_item "${_xmake_sh_target_current}" "rpathdirs" "${dir}"
     done
 }
 
