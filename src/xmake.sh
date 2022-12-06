@@ -3,6 +3,13 @@
 option "debug" "Enable debug compilation mode." false
 option "tests" "Enable tests." true
 
+option "pthread"
+    add_links "pthread"
+    add_cincludes "pthread.h"
+    add_cfuncs "pthread_create"
+    add_defines "HAS_PTHREAD"
+option_end
+
 set_warnings "all" "error"
 set_languages "c99" "c++11"
 if is_mode "debug"; then

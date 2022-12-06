@@ -202,12 +202,15 @@ $ make run
 - [x] option
   - [x] set_default
   - [x] set_description
-  - [ ] add_defines
-  - [ ] add_undefines
-  - [ ] add_includedirs
-  - [ ] add_linkdirs
-  - [ ] add_links
-  - [ ] add_syslinks
+  - [x] add_defines
+  - [x] add_undefines
+  - [x] add_includedirs
+  - [x] add_linkdirs
+  - [x] add_links
+  - [x] add_syslinks
+  - [x] add_cflags
+  - [x] add_cxflags
+  - [x] add_cxxflags
   - [ ] add_cfuncs
   - [ ] add_cxxfuncs
   - [ ] add_cincludes
