@@ -583,11 +583,16 @@ option()
     local name=${1}
     local description=${2}
     local default=${3}
+    _xmake_sh_option_current=${name}
     _xmake_sh_options="${_xmake_sh_options} ${name}"
     _map_set "options" "${name}_name" "${name}"
     _map_set "options" "${name}_description" "${description}"
     _map_set "options" "${name}_default" "${default}"
     return 0
+}
+option_end()
+{
+    _xmake_sh_option_current=""
 }
 _map "options"
 
