@@ -619,7 +619,22 @@ _set_option_item()
     if _test_nz "${name}"; then
         _map_set "options" "${name}_${key}" "${value}"
     else
-        _die "please set option in the option scope!"
+        _die "please set option(${name}) in the option scope!"
+    fi
+}
+
+# add values to the given option item
+_add_option_item()
+{
+    local name=${1}
+    local key=${2}
+    local value=${3}
+    if _test_nz "${name}"; then
+        local values=$(_map_get "options" "${name}_${key}")
+        values="${values} ${value}"
+        _map_set "options" "${name}_${key}" "${values}"
+    else
+        _die "please set option(${name}) in the option scope!"
     fi
 }
 
