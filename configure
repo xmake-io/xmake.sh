@@ -43,6 +43,10 @@ _tolower() {
     echo "$1" | tr '[A-Z]' '[a-z]'
 }
 
+_replace() {
+    echo "$1" | sed "s/${2}/${3}/g"
+}
+
 _vprint() {
     if "${xmake_sh_verbose}"; then
         echo "$@"
@@ -105,6 +109,19 @@ _test_contains() {
     return 1
 }
 
+# test startswith sub-string
+# e.g.
+# str="src/*.cpp"
+# _test_startswith "$str" "src"
+_test_startswith() {
+    case "${1}" in
+        ${2}*) return 0;;
+        *) return 1;;
+    esac
+    return 1
+}
+
+
 # try run program
 _try_run_program()
 {
@@ -143,6 +160,13 @@ _path_basename() {
 _path_directory() {
     local dirname=`dirname -- "${1}"`
     echo "${dirname}"
+}
+
+_path_is_absolute() {
+    if _test_startswith "${1}" "/"; then
+        return 0
+    fi
+    return 1
 }
 
 # get relative path, e.g $(_path_relative ${rootdir} ${absolute_path}`
@@ -1305,24 +1329,27 @@ add_files()
     if ! ${_loading_targets}; then
         return
     fi
-    for file in $@; do
-        if test ! -f "${file}"; then
+    # we need avoid escape `*` automatically in for-loop
+    local list=$(_replace "${@}" "\*" "?")
+    for file in ${list}; do
+        file=$(_replace "${file}" "?" "*")
+        if ! _path_is_absolute "${file}"; then
             file="${xmake_sh_scriptdir}/${file}"
         fi
         local files=""
         if _test_contains "${file}" "\*\*"; then
             local dir=$(_path_directory "${file}")
             local name=$(_path_filename "${file}")
-            files=$(_find "${dir}" ${name})
+            files=$(_find "${dir}" "${name}")
         elif _test_contains "${file}" "\*"; then
             local dir=$(_path_directory "${file}")
             local name=$(_path_filename "${file}")
-            files=$(_find "${dir}" ${name} 1)
+            files=$(_find "${dir}" "${name}" 1)
         else
             files="${file}"
         fi
         for file in ${files}; do
-            file=$(_path_relative ${xmake_sh_projectdir} "${file}")
+            file=$(_path_relative "${xmake_sh_projectdir}" "${file}")
             _add_target_item "${_xmake_sh_target_current}" "files" "${file}"
         done
     done
@@ -1357,7 +1384,7 @@ add_includedirs()
         return
     fi
     for dir in $@; do
-        if test ! -d "${dir}"; then
+        if ! _path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
         dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
@@ -1394,7 +1421,7 @@ add_linkdirs()
         return
     fi
     for dir in $@; do
-        if test ! -d "${dir}"; then
+        if ! _path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
         dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
@@ -1420,7 +1447,7 @@ add_frameworkdirs()
         return
     fi
     for dir in $@; do
-        if test ! -d "${dir}"; then
+        if ! _path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
         dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
@@ -2421,3 +2448,6 @@ _generate_build_file()
     fi
 }
 _generate_build_file
+
+
+
