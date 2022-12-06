@@ -171,6 +171,7 @@ $ make run
   - [x] add_undefines
   - [x] add_includedirs
   - [x] add_linkdirs
+  - [x] add_rpathdirs
   - [x] add_links
   - [x] add_syslinks
   - [x] set_strip
