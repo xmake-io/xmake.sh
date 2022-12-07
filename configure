@@ -145,14 +145,13 @@ _os_tmpfile() {
 }
 
 # try run program
-_os_execv() {
-    local program="${1}"
-    local argv="${2}"
+_os_runv() {
+    local cmd="${@}"
     if ${xmake_sh_diagnosis}; then
-        echo "try running: ${program}" "${argv}"
-        "${program}" "${argv}"
+        echo "try running: ${cmd}"
+        ${cmd}
     else
-        "${program}" "${argv}" >/dev/null 2>&1
+        ${cmd} >/dev/null 2>&1
     fi
     local ok=$?
     if test "${ok}" -ne "0"; then
@@ -2110,7 +2109,7 @@ _check_platform() {
 # try make
 _toolchain_try_make() {
     local program=${1}
-    if _os_execv "${program}" "--version"; then
+    if _os_runv "${program}" "--version"; then
         return 0
     fi
     return 1
@@ -2119,7 +2118,7 @@ _toolchain_try_make() {
 # try ninja
 _toolchain_try_ninja() {
     local program=${1}
-    if _os_execv "${program}" "--version"; then
+    if _os_runv "${program}" "--version"; then
         return 0
     fi
     return 1
@@ -2135,7 +2134,7 @@ _toolchain_try_gcc() {
 
     local kind=${1}
     local program=${2}
-    if _os_execv "${program}" "--version"; then
+    if _os_runv "${program}" "--version"; then
         _toolchain_try_gcc_result="ok"
         return 0
     fi
@@ -2153,7 +2152,7 @@ _toolchain_try_gxx() {
 
     local kind=${1}
     local program=${2}
-    if _os_execv "${program}" "--version"; then
+    if _os_runv "${program}" "--version"; then
         _toolchain_try_gxx_result="ok"
         return 0
     fi
@@ -2171,7 +2170,7 @@ _toolchain_try_clang() {
 
     local kind=${1}
     local program=${2}
-    if _os_execv "${program}" "--version"; then
+    if _os_runv "${program}" "--version"; then
         _toolchain_try_clang_result="ok"
         return 0
     fi
@@ -2189,7 +2188,7 @@ _toolchain_try_clangxx() {
 
     local kind=${1}
     local program=${2}
-    if _os_execv "${program}" "--version"; then
+    if _os_runv "${program}" "--version"; then
         _toolchain_try_clangxx_result="ok"
         return 0
     fi
