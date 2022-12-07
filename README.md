@@ -202,6 +202,7 @@ $ make run
 - [x] option
   - [x] set_default
   - [x] set_description
+  - [x] set_showmenu
   - [x] add_defines
   - [x] add_undefines
   - [x] add_includedirs

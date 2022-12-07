@@ -662,6 +662,60 @@ _set_option_value()
     _set_option_item "${name}" "value" "${value}"
 }
 
+# this option need checking?
+_option_need_checking() {
+    local name="${1}"
+    local default=$(_get_option_item "${name}" "default")
+    if _test_nz "${default}"; then
+        return 1
+    fi
+    local cfuncs=$(_get_option_item "${name}" "cfuncs")
+    local cxxfuncs=$(_get_option_item "${name}" "cxxfuncs")
+    local cincludes=$(_get_option_item "${name}" "cincludes")
+    local cxxincludes=$(_get_option_item "${name}" "cxxincludes")
+    local ctypes=$(_get_option_item "${name}" "ctypes")
+    local cxxtypes=$(_get_option_item "${name}" "cxxtypes")
+    local csnippets=$(_get_option_item "${name}" "csnippets")
+    local cxxsnippets=$(_get_option_item "${name}" "cxxsnippets")
+    local links=$(_get_option_item "${name}" "links")
+    local syslinks=$(_get_option_item "${name}" "syslinks")
+    if _test_nz "${cfuncs}" || _test_nz "${cxxfuncs}" ||
+       _test_nz "${cincludes}" || _test_nz "${cxxincludes}" ||
+       _test_nz "${ctypes}" || _test_nz "${cxxtypes}" ||
+       _test_nz "${csnippets}" || _test_nz "${cxxsnippets}" ||
+       _test_nz "${links}" || _test_nz "${syslinks}"; then
+        return 0
+    fi
+    return 1
+}
+
+# get options for the help menu
+_get_options_for_menu() {
+    local options=""
+    for name in ${_xmake_sh_options}; do
+        local showmenu=$(_get_option_item "${name}" "showmenu")
+        if _is_enabled "${showmenu}"; then
+            options="${options} ${name}"
+        elif _test_z "${showmenu}" && ! _option_need_checking "${name}"; then
+            options="${options} ${name}"
+        fi
+    done
+    echo "${options}"
+}
+
+# get options for checking
+_get_options_for_checking() {
+    local options=""
+    for name in ${_xmake_sh_options}; do
+        local showmenu=$(_get_option_item "${name}" "showmenu")
+        if _test_z "${showmenu}" && _option_need_checking "${name}"; then
+            options="${options} ${name}"
+        fi
+    done
+    echo "${options}"
+}
+
+
 # is config for option
 is_config()
 {
@@ -689,6 +743,16 @@ has_config()
         return 0
     fi
     return 1
+}
+
+# set showmenu in option
+set_showmenu()
+{
+    if ! ${_loading_options}; then
+        return
+    fi
+    local show="${1}"
+    _set_option_item "${_xmake_sh_option_current}" "showmenu" "${show}"
 }
 
 # set description in option
@@ -1924,7 +1988,8 @@ _load_options_and_toolchains
 # show option usage
 _show_options_usage()
 {
-    for name in ${_xmake_sh_options}; do
+    local options=$(_get_options_for_menu)
+    for name in ${options}; do
         local description=$(_get_option_item "${name}" "description")
         local default=$(_get_option_item "${name}" "default")
         local head="--${name}=$(_toupper ${name})"
