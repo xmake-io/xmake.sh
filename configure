@@ -166,6 +166,21 @@ _os_runv() {
     return 0
 }
 
+# try run program and get output
+_os_iorunv() {
+    local cmd="${@}"
+    local tmpfile=$(_os_tmpfile)
+    ${cmd} >"${tmpfile}" 2>&1
+    local ok=$?
+    if test "${ok}" -ne "0"; then
+        echo ""
+    else
+        local result=$(cat "${tmpfile}")
+        echo "${result}"
+    fi
+    _os_tryrm "${tmpfile}"
+}
+
 # find file in the given directory
 # e.g. _os_find . xmake.sh
 _os_find() {
@@ -2880,6 +2895,40 @@ _generate_configfile() {
         version_build=$(_os_date "${version_build}")
         _vprint_configvar_value "${content}" "VERSION_BUILD" "${version_build}"
         content=$(_replace_configvar_value "${content}" "VERSION_BUILD" "${version_build}")
+    fi
+
+    # replace git variables
+    if string_contains "${content}" "GIT_"; then
+        local git_tag=$(_os_iorunv "git" "describe" "--tags")
+        if _test_nz "${git_tag}"; then
+            _vprint_configvar_value "${content}" "GIT_TAG" "${git_tag}"
+            content=$(_replace_configvar_value "${content}" "GIT_TAG" "${git_tag}")
+        fi
+        local git_tag_long=$(_os_iorunv "git" "describe" "--tags" "--long")
+        if _test_nz "${git_tag_long}"; then
+            _vprint_configvar_value "${content}" "GIT_TAG_LONG" "${git_tag_long}"
+            content=$(_replace_configvar_value "${content}" "GIT_TAG_LONG" "${git_tag_long}")
+        fi
+        local git_branch=$(_os_iorunv "git" "rev-parse" "--abbrev-ref" "HEAD")
+        if _test_nz "${git_branch}"; then
+            _vprint_configvar_value "${content}" "GIT_BRANCH" "${git_branch}"
+            content=$(_replace_configvar_value "${content}" "GIT_BRANCH" "${git_branch}")
+        fi
+        local git_commit=$(_os_iorunv "git" "rev-parse" "--short" "HEAD")
+        if _test_nz "${git_commit}"; then
+            _vprint_configvar_value "${content}" "GIT_COMMIT" "${git_commit}"
+            content=$(_replace_configvar_value "${content}" "GIT_COMMIT" "${git_commit}")
+        fi
+        local git_commit_long=$(_os_iorunv "git" "rev-parse" "HEAD")
+        if _test_nz "${git_commit_long}"; then
+            _vprint_configvar_value "${content}" "GIT_COMMIT_LONG" "${git_commit_long}"
+            content=$(_replace_configvar_value "${content}" "GIT_COMMIT_LONG" "${git_commit_long}")
+        fi
+        local git_commit_date=$(_os_iorunv "log" "-1" "--date=format:%Y%m%d%H%M%S" "--format=%ad")
+        if _test_nz "${git_commit_date}"; then
+            _vprint_configvar_value "${content}" "GIT_COMMIT_DATE" "${git_commit_date}"
+            content=$(_replace_configvar_value "${content}" "GIT_COMMIT_DATE" "${git_commit_date}")
+        fi
     fi
 
     # replace configvars in target
