@@ -10,6 +10,12 @@ option "pthread"
     add_defines "HAS_PTHREAD"
 option_end
 
+option "cxx_constexpr"
+    set_languages "c++11"
+    add_cxxsnippets "constexpr int k = 0;"
+    add_defines "HAS_CONSTEXPR"
+option_end
+
 set_warnings "all" "error"
 set_languages "c99" "c++11"
 if is_mode "debug"; then
@@ -26,7 +32,7 @@ target "demo"
     add_deps "foo" "bar"
     add_files "*.cpp"
     add_includedirs "foo" "bar"
-    add_options "pthread"
+    add_options "pthread" "cxx_constexpr"
     if has_config "debug"; then
         add_defines "DEBUG" "TEST"
     fi

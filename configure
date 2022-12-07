@@ -2407,10 +2407,55 @@ _check_toolchain() {
     fi
 }
 
+# get function code
+#
+# sigsetjmp
+# sigsetjmp((void*)0, 0)
+#
+_get_funccode() {
+    local func="${1}"
+    local code=""
+    if string_contains "${func}" "("; then
+        code="${func}"
+    else
+        code="volatile void* p${func} = (void*)&${func};"
+    fi
+    echo "${code}"
+}
+
 # generate cxsnippets source code
 _generate_cxsnippets_sourcecode() {
+    local funcs="${1}"
+    local includes="${2}"
+    local types="${3}"
+    local snippets="${4}"
+
+    local snippet_includes=""
+    for include in $includes; do
+        snippet_includes="${snippet_includes}#include \"${include}\"\n"
+    done
+
+    local snippet_types=""
+    for type in $types; do
+        local typevar=$(string_replace "${type}" '[^a-zA-Z]' "_")
+        snippet_types="${snippet_types}typedef ${type} __type_${typevar};\n"
+    done
+
+    local snippet_funcs=""
+    for func in $funcs; do
+        func=$(_get_funccode "${func}")
+        snippet_funcs="${snippet_funcs}${func}\n    "
+    done
+
     echo '
+'"${snippet_includes}"'
+
+'"${snippet_types}"'
+
+'"${snippets}"'
+
 int main(int argc, char** argv) {
+    '"${snippet_funcs}"'
     return 0;
 }'
 }
@@ -2426,8 +2471,7 @@ _check_cxsnippets() {
     local links=$(_get_option_item "${name}" "links")
     local syslinks=$(_get_option_item "${name}" "syslinks")
     if _test_z "${funcs}" && _test_z "${includes}" &&
-       _test_z "${types}" && _test_z "${snippets}" &&
-       _test_z "${links}" && _test_z "${syslinks}"; then
+       _test_z "${types}" && _test_z "${snippets}"; then
         return 0
     fi
     if _test_nz "${syslinks}"; then
@@ -2441,7 +2485,8 @@ _check_cxsnippets() {
     fi
 
     # generate source code
-    local sourcecode=$(_generate_cxsnippets_sourcecode)
+    local sourcecode=$(_generate_cxsnippets_sourcecode "${funcs}" "${includes}" "${types}" "${snippets}")
+    dprint "${sourcecode}"
 
     # generate the source file
     local tmpfile=$(_os_tmpfile)
@@ -2490,9 +2535,9 @@ _check_cxsnippets() {
     fi
 
     # remove files
-#    _os_tryrm "${sourcefile}"
-#    _os_tryrm "${objectfile}"
-#    _os_tryrm "${binaryfile}"
+    _os_tryrm "${sourcefile}"
+    _os_tryrm "${objectfile}"
+    _os_tryrm "${binaryfile}"
     if ${ok}; then
         return 0
     fi
