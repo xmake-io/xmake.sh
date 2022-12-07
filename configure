@@ -624,7 +624,7 @@ _set_option_item()
     if _test_nz "${name}"; then
         _map_set "options" "${name}_${key}" "${value}"
     else
-        _die "please set option(${name}) in the option scope!"
+        _die "please call set_${key}(${value}) in the option scope!"
     fi
 }
 
@@ -639,7 +639,7 @@ _add_option_item()
         values="${values} ${value}"
         _map_set "options" "${name}_${key}" "${values}"
     else
-        _die "please set option(${name}) in the option scope!"
+        _die "please call add_${key}(${value}) in the option scope!"
     fi
 }
 
@@ -701,84 +701,84 @@ set_description()
     _set_option_item "${_xmake_sh_option_current}" "description" "${description}"
 }
 
-# set cfuncs in option
-set_cfuncs()
+# add cfuncs in option
+add_cfuncs()
 {
     if ! ${_loading_options}; then
         return
     fi
     local cfuncs="${1}"
-    _set_option_item "${_xmake_sh_option_current}" "cfuncs" "${cfuncs}"
+    _add_option_item "${_xmake_sh_option_current}" "cfuncs" "${cfuncs}"
 }
 
-# set cxxfuncs in option
-set_cxxfuncs()
+# add cxxfuncs in option
+add_cxxfuncs()
 {
     if ! ${_loading_options}; then
         return
     fi
     local cxxfuncs="${1}"
-    _set_option_item "${_xmake_sh_option_current}" "cxxfuncs" "${cxxfuncs}"
+    _add_option_item "${_xmake_sh_option_current}" "cxxfuncs" "${cxxfuncs}"
 }
 
-# set cincludes in option
-set_cincludes()
+# add cincludes in option
+add_cincludes()
 {
     if ! ${_loading_options}; then
         return
     fi
     local cincludes="${1}"
-    _set_option_item "${_xmake_sh_option_current}" "cincludes" "${cincludes}"
+    _add_option_item "${_xmake_sh_option_current}" "cincludes" "${cincludes}"
 }
 
-# set cxxincludes in option
-set_cxxincludes()
+# add cxxincludes in option
+add_cxxincludes()
 {
     if ! ${_loading_options}; then
         return
     fi
     local cxxincludes="${1}"
-    _set_option_item "${_xmake_sh_option_current}" "cxxincludes" "${cxxincludes}"
+    _add_option_item "${_xmake_sh_option_current}" "cxxincludes" "${cxxincludes}"
 }
 
-# set ctypes in option
-set_ctypes()
+# add ctypes in option
+add_ctypes()
 {
     if ! ${_loading_options}; then
         return
     fi
     local ctypes="${1}"
-    _set_option_item "${_xmake_sh_option_current}" "ctypes" "${ctypes}"
+    _add_option_item "${_xmake_sh_option_current}" "ctypes" "${ctypes}"
 }
 
-# set cxxtypes in option
-set_cxxtypes()
+# add cxxtypes in option
+add_cxxtypes()
 {
     if ! ${_loading_options}; then
         return
     fi
     local cxxtypes="${1}"
-    _set_option_item "${_xmake_sh_option_current}" "cxxtypes" "${cxxtypes}"
+    _add_option_item "${_xmake_sh_option_current}" "cxxtypes" "${cxxtypes}"
 }
 
-# set csnippets in option
-set_csnippets()
+# add csnippets in option
+add_csnippets()
 {
     if ! ${_loading_options}; then
         return
     fi
     local csnippets="${1}"
-    _set_option_item "${_xmake_sh_option_current}" "csnippets" "${csnippets}"
+    _add_option_item "${_xmake_sh_option_current}" "csnippets" "${csnippets}"
 }
 
-# set cxxsnippets in option
-set_cxxsnippets()
+# add cxxsnippets in option
+add_cxxsnippets()
 {
     if ! ${_loading_options}; then
         return
     fi
     local cxxsnippets="${1}"
-    _set_option_item "${_xmake_sh_option_current}" "cxxsnippets" "${cxxsnippets}"
+    _add_option_item "${_xmake_sh_option_current}" "cxxsnippets" "${cxxsnippets}"
 }
 
 #-----------------------------------------------------------------------------
@@ -1378,7 +1378,7 @@ set_default()
     local default=${1}
     if ${_loading_targets}; then
         _set_target_item "${_xmake_sh_target_current}" "default" "${default}"
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         _set_option_item "${_xmake_sh_option_current}" "default" "${default}"
     fi
 }
@@ -1493,7 +1493,7 @@ add_defines()
         for define in $@; do
             _add_target_item "${_xmake_sh_target_current}" "defines" "${define}"
         done
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         for define in $@; do
             _add_option_item "${_xmake_sh_option_current}" "defines" "${define}"
         done
@@ -1507,7 +1507,7 @@ add_udefines()
         for udefine in $@; do
             _add_target_item "${_xmake_sh_target_current}" "udefines" "${udefine}"
         done
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         for udefine in $@; do
             _add_option_item "${_xmake_sh_option_current}" "udefines" "${udefine}"
         done
@@ -1524,7 +1524,7 @@ add_includedirs()
         dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
         if ${_loading_targets}; then
             _add_target_item "${_xmake_sh_target_current}" "includedirs" "${dir}"
-        elif ${_loading_options}; then
+        elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
             _add_option_item "${_xmake_sh_option_current}" "includedirs" "${dir}"
         fi
     done
@@ -1537,7 +1537,7 @@ add_links()
         for link in $@; do
             _add_target_item "${_xmake_sh_target_current}" "links" "${link}"
         done
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         for link in $@; do
             _add_option_item "${_xmake_sh_option_current}" "links" "${link}"
         done
@@ -1551,7 +1551,7 @@ add_syslinks()
         for syslink in $@; do
             _add_target_item "${_xmake_sh_target_current}" "syslinks" "${syslink}"
         done
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         for syslink in $@; do
             _add_option_item "${_xmake_sh_option_current}" "syslinks" "${syslink}"
         done
@@ -1568,7 +1568,7 @@ add_linkdirs()
         dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
         if ${_loading_targets}; then
             _add_target_item "${_xmake_sh_target_current}" "linkdirs" "${dir}"
-        elif ${_loading_options}; then
+        elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
             _add_option_item "${_xmake_sh_option_current}" "linkdirs" "${dir}"
         fi
     done
@@ -1596,7 +1596,7 @@ add_frameworks()
         for framework in $@; do
             _add_target_item "${_xmake_sh_target_current}" "frameworks" "${framework}"
         done
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         for framework in $@; do
             _add_option_item "${_xmake_sh_option_current}" "frameworks" "${framework}"
         done
@@ -1613,7 +1613,7 @@ add_frameworkdirs()
         dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
         if ${_loading_targets}; then
             _add_target_item "${_xmake_sh_target_current}" "frameworkdirs" "${dir}"
-        elif ${_loading_options}; then
+        elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
             _add_option_item "${_xmake_sh_option_current}" "frameworkdirs" "${dir}"
         fi
     done
@@ -1645,7 +1645,7 @@ set_languages()
     local languages="${@}"
     if ${_loading_targets}; then
         _set_target_item "${_xmake_sh_target_current}" "languages" "${languages}"
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         _set_option_item "${_xmake_sh_option_current}" "languages" "${languages}"
     fi
 }
@@ -1656,7 +1656,7 @@ set_warnings()
     local warnings="${@}"
     if ${_loading_targets}; then
         _set_target_item "${_xmake_sh_target_current}" "warnings" "${warnings}"
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         _set_option_item "${_xmake_sh_option_current}" "warnings" "${warnings}"
     fi
 }
@@ -1667,7 +1667,7 @@ set_optimizes()
     local optimizes="${@}"
     if ${_loading_targets}; then
         _set_target_item "${_xmake_sh_target_current}" "optimizes" "${optimizes}"
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         _set_option_item "${_xmake_sh_option_current}" "optimizes" "${optimizes}"
     fi
 }
@@ -1679,7 +1679,7 @@ add_cflags()
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cflags" "${flag}"
         done
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         for flag in $@; do
             _add_option_item "${_xmake_sh_option_current}" "cflags" "${flag}"
         done
@@ -1693,7 +1693,7 @@ add_cxflags()
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cxflags" "${flag}"
         done
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         for flag in $@; do
             _add_option_item "${_xmake_sh_option_current}" "cxflags" "${flag}"
         done
@@ -1707,7 +1707,7 @@ add_cxxflags()
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cxxflags" "${flag}"
         done
-    elif ${_loading_options}; then
+    elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
         for flag in $@; do
             _add_option_item "${_xmake_sh_option_current}" "cxxflags" "${flag}"
         done
