@@ -123,8 +123,7 @@ _test_startswith() {
 
 
 # try run program
-_try_run_program()
-{
+_try_run_program() {
     local program="${1}"
     local argv="${2}"
     if ${xmake_sh_diagnosis}; then
@@ -269,16 +268,14 @@ _get_flagname() {
 
 # duplicate characters
 # e.g. _dupch 10 "." => ...........
-_dupch()
-{
+_dupch() {
     local count=${1}
     local ch=${2}
     printf %${count}s | tr " " "${ch}"
 }
 
 # is enabled? true, yes, y
-_is_enabled()
-{
+_is_enabled() {
     local value=${1}
     if _test_eq "${value}" "true"; then
         return 0
@@ -338,22 +335,19 @@ _find() {
 #     echo ${key} "->" ${value}
 # done
 #
-_map()
-{
+_map() {
     local name=${1}
     eval _map_${name}_count=0
     eval _map_${name}_keys=""
 }
 
-_map_count()
-{
+_map_count() {
     local name=${1}
     local count=$(eval echo \$_map_${name}_count)
     echo ${count}
 }
 
-_map_get()
-{
+_map_get() {
     local name=${1}
     local key=${2}
     local value=$(eval echo \$_map_${name}_value_${key})
@@ -363,8 +357,7 @@ _map_get()
     echo ${value}
 }
 
-_map_has()
-{
+_map_has() {
     local name=${1}
     local key=${2}
     local value=$(eval echo \$_map_${name}_value_${key})
@@ -374,8 +367,7 @@ _map_has()
     return 1
 }
 
-_map_set()
-{
+_map_set() {
     local name=${1}
     local key=${2}
     local value=${3}
@@ -389,8 +381,7 @@ _map_set()
     eval _map_${name}_value_${key}=\${value}
 }
 
-_map_remove()
-{
+_map_remove() {
     local name=${1}
     local key=${2}
     if _map_has ${name} ${key}; then
@@ -408,8 +399,7 @@ _map_remove()
     fi
 }
 
-_map_keys()
-{
+_map_keys() {
     local name=${1}
     local keys=$(eval echo \$_map_${name}_keys)
     echo ${keys}
@@ -449,8 +439,7 @@ fi
 # if is_host "linux" "macosx"; then
 #     ...
 # fi
-is_host()
-{
+is_host() {
     for host in $@; do
         if test "x${os_host}" = "x${host}"; then
             return 0
@@ -490,8 +479,7 @@ fi
 # if is_plat "linux" "macosx"; then
 #     ...
 # fi
-is_plat()
-{
+is_plat() {
     for plat in $@; do
         if test "x${_target_plat}" = "x${plat}"; then
             return 0
@@ -505,8 +493,7 @@ is_plat()
 # if is_arch "x86_64" "i386"; then
 #     ...
 # fi
-is_arch()
-{
+is_arch() {
     for arch in $@; do
         if test "x${_target_arch}" = "x${arch}"; then
             return 0
@@ -520,8 +507,7 @@ is_arch()
 # if is_mode "release"; then
 #     ...
 # fi
-is_mode()
-{
+is_mode() {
     for mode in $@; do
         if test "x${_target_mode}" = "x${mode}"; then
             return 0
@@ -535,8 +521,7 @@ is_mode()
 # if is_toolchain "clang"; then
 #     ...
 # fi
-is_toolchain()
-{
+is_toolchain() {
     for toolchain in $@; do
         if test "x${_target_toolchain}" = "x${toolchain}"; then
             return 0
@@ -551,8 +536,7 @@ is_toolchain()
 
 # include the given xmake.sh file or directory
 # e.g. includes "src" "tests"
-includes()
-{
+includes() {
     for path in $@; do
         if test -f "${path}"; then
             xmake_sh_scriptdir=$(dirname -- "${path}")
@@ -575,8 +559,7 @@ includes()
 #
 
 # define option
-option()
-{
+option() {
     if ! ${_loading_options}; then
         return
     fi
@@ -590,15 +573,13 @@ option()
     _map_set "options" "${name}_default" "${default}"
     return 0
 }
-option_end()
-{
+option_end() {
     _xmake_sh_option_current=""
 }
 _map "options"
 
 # has the given option?
-_has_option()
-{
+_has_option() {
     local name=${1}
     if _map_has "options" "${name}_name"; then
         return 0
@@ -607,8 +588,7 @@ _has_option()
 }
 
 # get the given option item
-_get_option_item()
-{
+_get_option_item() {
     local name=${1}
     local key=${2}
     local value=$(_map_get "options" "${name}_${key}")
@@ -616,8 +596,7 @@ _get_option_item()
 }
 
 # set the given option item
-_set_option_item()
-{
+_set_option_item() {
     local name=${1}
     local key=${2}
     local value=${3}
@@ -629,8 +608,7 @@ _set_option_item()
 }
 
 # add values to the given option item
-_add_option_item()
-{
+_add_option_item() {
     local name=${1}
     local key=${2}
     local value=${3}
@@ -644,8 +622,7 @@ _add_option_item()
 }
 
 # get the give option value
-_get_option_value()
-{
+_get_option_value() {
     local name=${1}
     local value=$(_get_option_item "${name}" "value")
     if test "x${value}" = "x"; then
@@ -655,8 +632,7 @@ _get_option_value()
 }
 
 # set the give option value
-_set_option_value()
-{
+_set_option_value() {
     local name=${1}
     local value=${2}
     _set_option_item "${name}" "value" "${value}"
@@ -717,8 +693,7 @@ _get_options_for_checking() {
 
 
 # is config for option
-is_config()
-{
+is_config() {
     if ! ${_loading_targets}; then
         return 1
     fi
@@ -732,8 +707,7 @@ is_config()
 }
 
 # has config for option
-has_config()
-{
+has_config() {
     if ! ${_loading_targets}; then
         return 1
     fi
@@ -746,8 +720,7 @@ has_config()
 }
 
 # set showmenu in option
-set_showmenu()
-{
+set_showmenu() {
     if ! ${_loading_options}; then
         return
     fi
@@ -756,8 +729,7 @@ set_showmenu()
 }
 
 # set description in option
-set_description()
-{
+set_description() {
     if ! ${_loading_options}; then
         return
     fi
@@ -766,8 +738,7 @@ set_description()
 }
 
 # add cfuncs in option
-add_cfuncs()
-{
+add_cfuncs() {
     if ! ${_loading_options}; then
         return
     fi
@@ -776,8 +747,7 @@ add_cfuncs()
 }
 
 # add cxxfuncs in option
-add_cxxfuncs()
-{
+add_cxxfuncs() {
     if ! ${_loading_options}; then
         return
     fi
@@ -786,8 +756,7 @@ add_cxxfuncs()
 }
 
 # add cincludes in option
-add_cincludes()
-{
+add_cincludes() {
     if ! ${_loading_options}; then
         return
     fi
@@ -796,8 +765,7 @@ add_cincludes()
 }
 
 # add cxxincludes in option
-add_cxxincludes()
-{
+add_cxxincludes() {
     if ! ${_loading_options}; then
         return
     fi
@@ -806,8 +774,7 @@ add_cxxincludes()
 }
 
 # add ctypes in option
-add_ctypes()
-{
+add_ctypes() {
     if ! ${_loading_options}; then
         return
     fi
@@ -816,8 +783,7 @@ add_ctypes()
 }
 
 # add cxxtypes in option
-add_cxxtypes()
-{
+add_cxxtypes() {
     if ! ${_loading_options}; then
         return
     fi
@@ -826,8 +792,7 @@ add_cxxtypes()
 }
 
 # add csnippets in option
-add_csnippets()
-{
+add_csnippets() {
     if ! ${_loading_options}; then
         return
     fi
@@ -836,8 +801,7 @@ add_csnippets()
 }
 
 # add cxxsnippets in option
-add_cxxsnippets()
-{
+add_cxxsnippets() {
     if ! ${_loading_options}; then
         return
     fi
@@ -850,8 +814,7 @@ add_cxxsnippets()
 #
 
 # define target
-target()
-{
+target() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -861,15 +824,13 @@ target()
     _map_set "targets" "${name}_name" "${name}"
     return 0
 }
-target_end()
-{
+target_end() {
     _xmake_sh_target_current=""
 }
 _map "targets"
 
 # has the given target?
-_has_target()
-{
+_has_target() {
     local name=${1}
     if _map_has "targets" "${name}_name"; then
         return 0
@@ -878,8 +839,7 @@ _has_target()
 }
 
 # has the given target item
-_has_target_item()
-{
+_has_target_item() {
     local name=${1}
     local key=${2}
     if _map_has "targets" "${name}_${key}"; then
@@ -891,8 +851,7 @@ _has_target_item()
 }
 
 # get the given target item
-_get_target_item()
-{
+_get_target_item() {
     local name=${1}
     local key=${2}
     local values=$(_map_get "targets" "${name}_${key}")
@@ -904,8 +863,7 @@ _get_target_item()
 }
 
 # set the given target item
-_set_target_item()
-{
+_set_target_item() {
     local name=${1}
     local key=${2}
     local value=${3}
@@ -917,8 +875,7 @@ _set_target_item()
 }
 
 # add values to the given target item
-_add_target_item()
-{
+_add_target_item() {
     local name=${1}
     local key=${2}
     local value=${3}
@@ -1046,8 +1003,7 @@ _get_target_objectdir() {
 }
 
 # get target file path
-_get_target_file()
-{
+_get_target_file() {
     local name="${1}"
     local filename=$(_get_target_filename "${name}")
     local targetdir=$(_get_targetdir "${name}")
@@ -1427,8 +1383,7 @@ _get_target_flags() {
 }
 
 # set kind in target
-set_kind()
-{
+set_kind() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1437,8 +1392,7 @@ set_kind()
 }
 
 # set default in target
-set_default()
-{
+set_default() {
     local default=${1}
     if ${_loading_targets}; then
         _set_target_item "${_xmake_sh_target_current}" "default" "${default}"
@@ -1448,8 +1402,7 @@ set_default()
 }
 
 # set filename in target
-set_filename()
-{
+set_filename() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1458,8 +1411,7 @@ set_filename()
 }
 
 # set basename in target
-set_basename()
-{
+set_basename() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1468,8 +1420,7 @@ set_basename()
 }
 
 # set extension in target
-set_extension()
-{
+set_extension() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1478,8 +1429,7 @@ set_extension()
 }
 
 # set prefixname in target
-set_prefixname()
-{
+set_prefixname() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1488,8 +1438,7 @@ set_prefixname()
 }
 
 # set target directory
-set_targetdir()
-{
+set_targetdir() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1498,8 +1447,7 @@ set_targetdir()
 }
 
 # set target object directory
-set_objectdir()
-{
+set_objectdir() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1508,8 +1456,7 @@ set_objectdir()
 }
 
 # add deps in target
-add_deps()
-{
+add_deps() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1519,8 +1466,7 @@ add_deps()
 }
 
 # add files in target
-add_files()
-{
+add_files() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1551,8 +1497,7 @@ add_files()
 }
 
 # add defines in target
-add_defines()
-{
+add_defines() {
     if ${_loading_targets}; then
         for define in $@; do
             _add_target_item "${_xmake_sh_target_current}" "defines" "${define}"
@@ -1565,8 +1510,7 @@ add_defines()
 }
 
 # add udefines in target
-add_udefines()
-{
+add_udefines() {
     if ${_loading_targets}; then
         for udefine in $@; do
             _add_target_item "${_xmake_sh_target_current}" "udefines" "${udefine}"
@@ -1579,8 +1523,7 @@ add_udefines()
 }
 
 # add includedirs in target
-add_includedirs()
-{
+add_includedirs() {
     for dir in $@; do
         if ! _path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
@@ -1595,8 +1538,7 @@ add_includedirs()
 }
 
 # add links in target
-add_links()
-{
+add_links() {
     if ${_loading_targets}; then
         for link in $@; do
             _add_target_item "${_xmake_sh_target_current}" "links" "${link}"
@@ -1609,8 +1551,7 @@ add_links()
 }
 
 # add syslinks in target
-add_syslinks()
-{
+add_syslinks() {
     if ${_loading_targets}; then
         for syslink in $@; do
             _add_target_item "${_xmake_sh_target_current}" "syslinks" "${syslink}"
@@ -1623,8 +1564,7 @@ add_syslinks()
 }
 
 # add linkdirs in target
-add_linkdirs()
-{
+add_linkdirs() {
     for dir in $@; do
         if ! _path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
@@ -1639,8 +1579,7 @@ add_linkdirs()
 }
 
 # add rpathdirs in target
-add_rpathdirs()
-{
+add_rpathdirs() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1654,8 +1593,7 @@ add_rpathdirs()
 }
 
 # add frameworks in target
-add_frameworks()
-{
+add_frameworks() {
     if ${_loading_targets}; then
         for framework in $@; do
             _add_target_item "${_xmake_sh_target_current}" "frameworks" "${framework}"
@@ -1668,8 +1606,7 @@ add_frameworks()
 }
 
 # add frameworkdirs in target
-add_frameworkdirs()
-{
+add_frameworkdirs() {
     for dir in $@; do
         if ! _path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
@@ -1684,8 +1621,7 @@ add_frameworkdirs()
 }
 
 # set strip in target
-set_strip()
-{
+set_strip() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1694,8 +1630,7 @@ set_strip()
 }
 
 # set symbols in target
-set_symbols()
-{
+set_symbols() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1704,8 +1639,7 @@ set_symbols()
 }
 
 # set languages in target
-set_languages()
-{
+set_languages() {
     local languages="${@}"
     if ${_loading_targets}; then
         _set_target_item "${_xmake_sh_target_current}" "languages" "${languages}"
@@ -1715,8 +1649,7 @@ set_languages()
 }
 
 # set warnings in target
-set_warnings()
-{
+set_warnings() {
     local warnings="${@}"
     if ${_loading_targets}; then
         _set_target_item "${_xmake_sh_target_current}" "warnings" "${warnings}"
@@ -1726,8 +1659,7 @@ set_warnings()
 }
 
 # set optimizes in target
-set_optimizes()
-{
+set_optimizes() {
     local optimizes="${@}"
     if ${_loading_targets}; then
         _set_target_item "${_xmake_sh_target_current}" "optimizes" "${optimizes}"
@@ -1737,8 +1669,7 @@ set_optimizes()
 }
 
 # add cflags in target
-add_cflags()
-{
+add_cflags() {
     if ${_loading_targets}; then
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cflags" "${flag}"
@@ -1751,8 +1682,7 @@ add_cflags()
 }
 
 # add cxflags in target
-add_cxflags()
-{
+add_cxflags() {
     if ${_loading_targets}; then
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cxflags" "${flag}"
@@ -1765,8 +1695,7 @@ add_cxflags()
 }
 
 # add cxxflags in target
-add_cxxflags()
-{
+add_cxxflags() {
     if ${_loading_targets}; then
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cxxflags" "${flag}"
@@ -1779,8 +1708,7 @@ add_cxxflags()
 }
 
 # add asflags in target
-add_asflags()
-{
+add_asflags() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1790,8 +1718,7 @@ add_asflags()
 }
 
 # add mflags in target
-add_mflags()
-{
+add_mflags() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1801,8 +1728,7 @@ add_mflags()
 }
 
 # add mxflags in target
-add_mxflags()
-{
+add_mxflags() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1812,8 +1738,7 @@ add_mxflags()
 }
 
 # add mxxflags in target
-add_mxxflags()
-{
+add_mxxflags() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1823,8 +1748,7 @@ add_mxxflags()
 }
 
 # add ldflags in target
-add_ldflags()
-{
+add_ldflags() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1834,8 +1758,7 @@ add_ldflags()
 }
 
 # add shflags in target
-add_shflags()
-{
+add_shflags() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1845,8 +1768,7 @@ add_shflags()
 }
 
 # add arflags in target
-add_arflags()
-{
+add_arflags() {
     if ! ${_loading_targets}; then
         return
     fi
@@ -1860,8 +1782,7 @@ add_arflags()
 #
 
 # define toolchain
-toolchain()
-{
+toolchain() {
     if ! ${_loading_toolchains}; then
         return
     fi
@@ -1871,15 +1792,13 @@ toolchain()
     _map_set "toolchains" "${name}_name" "${name}"
     return 0
 }
-toolchain_end()
-{
+toolchain_end() {
     _xmake_sh_toolchain_current=""
 }
 _map "toolchains"
 
 # has the given toolchain?
-_has_toolchain()
-{
+_has_toolchain() {
     local name=${1}
     if _map_has "toolchains" "${name}_name"; then
         return 0
@@ -1888,8 +1807,7 @@ _has_toolchain()
 }
 
 # get the given toolchain item
-_get_toolchain_item()
-{
+_get_toolchain_item() {
     local name=${1}
     local key=${2}
     local value=$(_map_get "toolchains" "${name}_${key}")
@@ -1897,8 +1815,7 @@ _get_toolchain_item()
 }
 
 # set the given toolchain item
-_set_toolchain_item()
-{
+_set_toolchain_item() {
     local name=${1}
     local key=${2}
     local value=${3}
@@ -1910,8 +1827,7 @@ _set_toolchain_item()
 }
 
 # get the give toolchain toolset
-_get_toolchain_toolset()
-{
+_get_toolchain_toolset() {
     local name=${1}
     local kind=${2}
     local programs=$(_get_toolchain_item "${name}" "toolset_${kind}")
@@ -1919,8 +1835,7 @@ _get_toolchain_toolset()
 }
 
 # set the give toolchain toolset
-_set_toolchain_toolset()
-{
+_set_toolchain_toolset() {
     local name=${1}
     local kind=${2}
     local programs="${3}"
@@ -1928,8 +1843,7 @@ _set_toolchain_toolset()
 }
 
 # set toolset in toolchain
-set_toolset()
-{
+set_toolset() {
     if ! ${_loading_toolchains}; then
         return
     fi
@@ -1967,8 +1881,7 @@ toolchain_end
 #
 
 # load options and toolchains
-_load_options_and_toolchains()
-{
+_load_options_and_toolchains() {
     _loading_options=true
     _loading_toolchains=true
     _loading_targets=false
@@ -1986,8 +1899,7 @@ _load_options_and_toolchains()
 _load_options_and_toolchains
 
 # show option usage
-_show_options_usage()
-{
+_show_options_usage() {
     local options=$(_get_options_for_menu)
     for name in ${options}; do
         local description=$(_get_option_item "${name}" "description")
@@ -2012,8 +1924,7 @@ _show_options_usage()
 }
 
 # show configure usage
-_show_usage()
-{
+_show_usage() {
 echo '
 Usage: '"$0"' [<options>...]
 Options: [defaults in brackets after descriptions]
@@ -2055,8 +1966,7 @@ Project options:
 }
 
 # show xmake.sh version
-_show_version()
-{
+_show_version() {
     echo "xmake.sh v${xmake_sh_version}, A script-only build utility like autotools"
     echo "${xmake_sh_copyright}"
     echo '                         _               _            '
@@ -2073,20 +1983,17 @@ _show_version()
 }
 
 # --foo=yes => foo
-_parse_argument_name()
-{
+_parse_argument_name() {
     echo "${1#*--}" | sed "s/${2-=[^=]*}$//"
 }
 
 # --foo=yes => yes
-_parse_argument_value()
-{
+_parse_argument_value() {
     echo "$1" | sed "s/^${2-[^=]*=}//"
 }
 
 # parse input arguments
-_handle_option()
-{
+_handle_option() {
     local name=$(_parse_argument_name ${1})
     local value=$(_parse_argument_value ${1})
     if test "x${name}" = "xhelp"; then
@@ -2141,8 +2048,7 @@ done
 #
 
 # check platform
-_check_platform()
-{
+_check_platform() {
     if test "x${_target_plat}" = "x"; then
         _target_plat=${_target_plat_default}
     fi
@@ -2157,8 +2063,7 @@ _check_platform()
 }
 
 # try make
-_toolchain_try_make()
-{
+_toolchain_try_make() {
     local program=${1}
     if _try_run_program "${program}" "--version"; then
         return 0
@@ -2167,8 +2072,7 @@ _toolchain_try_make()
 }
 
 # try ninja
-_toolchain_try_ninja()
-{
+_toolchain_try_ninja() {
     local program=${1}
     if _try_run_program "${program}" "--version"; then
         return 0
@@ -2177,8 +2081,7 @@ _toolchain_try_ninja()
 }
 
 # try gcc
-_toolchain_try_gcc()
-{
+_toolchain_try_gcc() {
     if test "x${_toolchain_try_gcc_result}" = "xok"; then
         return 0
     elif test "x${_toolchain_try_gcc_result}" = "xno"; then
@@ -2196,8 +2099,7 @@ _toolchain_try_gcc()
 }
 
 # try g++
-_toolchain_try_gxx()
-{
+_toolchain_try_gxx() {
     if test "x${_toolchain_try_gxx_result}" = "xok"; then
         return 0
     elif test "x${_toolchain_try_gxx_result}" = "xno"; then
@@ -2215,8 +2117,7 @@ _toolchain_try_gxx()
 }
 
 # try clang
-_toolchain_try_clang()
-{
+_toolchain_try_clang() {
     if test "x${_toolchain_try_clang_result}" = "xok"; then
         return 0
     elif test "x${_toolchain_try_clang_result}" = "xno"; then
@@ -2234,8 +2135,7 @@ _toolchain_try_clang()
 }
 
 # try clang++
-_toolchain_try_clangxx()
-{
+_toolchain_try_clangxx() {
     if test "x${_toolchain_try_clangxx_result}" = "xok"; then
         return 0
     elif test "x${_toolchain_try_clangxx_result}" = "xno"; then
@@ -2253,16 +2153,14 @@ _toolchain_try_clangxx()
 }
 
 # TODO try ar
-_toolchain_try_ar()
-{
+_toolchain_try_ar() {
     local kind=${1}
     local program=${2}
     return 0
 }
 
 # try program
-_toolchain_try_program()
-{
+_toolchain_try_program() {
     local toolchain=${1}
     local kind=${2}
     local program=${3}
@@ -2285,8 +2183,7 @@ _toolchain_try_program()
 }
 
 # try toolset
-_toolchain_try_toolset()
-{
+_toolchain_try_toolset() {
     local toolchain=${1}
     local kind=${2}
     local description=${3}
@@ -2302,8 +2199,7 @@ _toolchain_try_toolset()
 }
 
 # try toolchain
-_toolchain_try()
-{
+_toolchain_try() {
     local toolchain=${1}
     _vprint "checking for $toolchain toolchain ..."
     if _toolchain_try_toolset "${toolchain}" "cc" "c compiler" &&
@@ -2320,8 +2216,7 @@ _toolchain_try()
 }
 
 # detect make
-_toolchain_detect_make()
-{
+_toolchain_detect_make() {
     if test "x${_make_program}" = "x"; then
         _make_program=${_make_program_default}
     fi
@@ -2334,8 +2229,7 @@ _toolchain_detect_make()
 }
 
 # detect ninja
-_toolchain_detect_ninja()
-{
+_toolchain_detect_ninja() {
     if test "x${_ninja_program}" = "x"; then
         _ninja_program=${_ninja_program_default}
     fi
@@ -2348,8 +2242,7 @@ _toolchain_detect_ninja()
 }
 
 # detect build backend
-_toolchain_detect_backend()
-{
+_toolchain_detect_backend() {
     if test "x${_project_generator}" = "xgmake"; then
         _toolchain_detect_make
     elif test "x${_project_generator}" = "xninja"; then
@@ -2358,8 +2251,7 @@ _toolchain_detect_backend()
 }
 
 # detect toolchain
-_toolchain_detect()
-{
+_toolchain_detect() {
     # detect build backend
     _toolchain_detect_backend
 
@@ -2381,9 +2273,7 @@ _toolchain_detect()
 }
 
 # check toolchain
-_check_toolchain()
-{
-    # detect toolchain
+_check_toolchain() {
     local toolchain=${_target_toolchain}
     _target_toolchain=""
     _toolchain_detect ${toolchain}
@@ -2396,11 +2286,16 @@ _check_toolchain()
     fi
 }
 
+# check options
+_check_options() {
+    return 1
+}
+
 # check all
-_check_all()
-{
+_check_all() {
     _check_platform
     _check_toolchain
+    _check_options
 }
 _check_all
 
@@ -2409,8 +2304,7 @@ _check_all
 #
 
 # load targets
-_load_targets()
-{
+_load_targets() {
     _loading_options=false
     _loading_toolchains=false
     _loading_targets=true
@@ -2651,8 +2545,7 @@ _gmake_done() {
 }
 
 # generate build file for gmake
-_generate_for_gmake()
-{
+_generate_for_gmake() {
     _gmake_begin
     _gmake_add_header
     _gmake_add_switches
@@ -2669,8 +2562,7 @@ _generate_for_gmake()
 #
 
 # generate build file for ninja
-_generate_for_ninja()
-{
+_generate_for_ninja() {
     _die "Ninja generator has been not supported!"
 }
 
@@ -2678,8 +2570,7 @@ _generate_for_ninja()
 # generate build file
 #
 
-_generate_build_file()
-{
+_generate_build_file() {
     if test "x${_project_generator}" = "xgmake"; then
         _generate_for_gmake
     elif test "x${_project_generator}" = "xninja"; then
