@@ -96,6 +96,13 @@ string_replace() {
     echo "$1" | sed "s/${2}/${3}/g"
 }
 
+string_split() {
+    local str="${1}"
+    local sep="${2}"
+    local idx="${3}"
+    cut -d "${sep}" -f ${idx} <<< "${str}"
+}
+
 # does contain sub-string?
 # e.g.
 # str="src/*.cpp"
@@ -2845,9 +2852,24 @@ _generate_configfile() {
     # replace version
     local version=$(_get_target_item "${target}" "version")
     local version_build=$(_get_target_item "${target}" "version_build")
+    local version_major=$(string_split "${version}" "." 1)
+    local version_minor=$(string_split "${version}" "." 2)
+    local version_alter=$(string_split "${version}" "." 3)
     if _test_nz "${version}"; then
         _vprint_configvar_value "${content}" "VERSION" "${version}"
         content=$(_replace_configvar_value "${content}" "VERSION" "${version}")
+    fi
+    if _test_nz "${version_major}"; then
+        _vprint_configvar_value "${content}" "VERSION_MAJOR" "${version_major}"
+        content=$(_replace_configvar_value "${content}" "VERSION_MAJOR" "${version_major}")
+    fi
+    if _test_nz "${version_minor}"; then
+        _vprint_configvar_value "${content}" "VERSION_MINOR" "${version_minor}"
+        content=$(_replace_configvar_value "${content}" "VERSION_MINOR" "${version_minor}")
+    fi
+    if _test_nz "${version_alter}"; then
+        _vprint_configvar_value "${content}" "VERSION_ALTER" "${version_alter}"
+        content=$(_replace_configvar_value "${content}" "VERSION_ALTER" "${version_alter}")
     fi
 
     # replace configvars in target
