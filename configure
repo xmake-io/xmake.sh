@@ -121,6 +121,20 @@ _test_startswith() {
     return 1
 }
 
+# try remove file or directory
+_os_tryrm() {
+    if test -f "${1}"; then
+        rm "${1}"
+    elif test -d "${1}"; then
+        rm -r "${1}"
+    fi
+}
+
+# get temporary file
+_os_tmpfile() {
+    local tmpfile=$(mktemp)
+    echo "${tmpfile}"
+}
 
 # try run program
 _try_run_program() {
@@ -2317,39 +2331,65 @@ _check_toolchain() {
     fi
 }
 
-# check csnippets
-_check_csnippets() {
+# generate cxsnippets source code
+_generate_cxsnippets_sourcecode() {
+    echo ""
+}
+
+# check cxsnippets
+_check_cxsnippets() {
     local name="${1}"
-    local cfuncs=$(_get_option_item "${name}" "cfuncs")
-    local cincludes=$(_get_option_item "${name}" "cincludes")
-    local ctypes=$(_get_option_item "${name}" "ctypes")
-    local csnippets=$(_get_option_item "${name}" "csnippets")
+    local kind="${2}"
+    local funcs=$(_get_option_item "${name}" "${kind}funcs")
+    local includes=$(_get_option_item "${name}" "${kind}includes")
+    local types=$(_get_option_item "${name}" "${kind}types")
+    local snippets=$(_get_option_item "${name}" "${kind}snippets")
     local links=$(_get_option_item "${name}" "links")
     local syslinks=$(_get_option_item "${name}" "syslinks")
-    if _test_z "${cfuncs}" && _test_z "${cincludes}" &&
-       _test_z "${ctypes}" && _test_z "${csnippets}" &&
+    if _test_z "${funcs}" && _test_z "${includes}" &&
+       _test_z "${types}" && _test_z "${snippets}" &&
        _test_z "${links}" && _test_z "${syslinks}"; then
         return 0
     fi
 
+    # get c/c++ extension
+    local extension=".c"
+    if _test_eq "${kind}" "cxx"; then
+        extension=".cpp"
+    fi
+
+    # generate source code
+    local sourcecode=$(_generate_cxsnippets_sourcecode)
+
+    # generate the source file
+    local tmpfile=$(_os_tmpfile)
+    local sourcefile="${tmpfile}${extension}"
+    local objectfile="${tmpfile}.o"
+    local binaryfile="${tmpfile}.bin"
+    echo "${sourcecode}" > "${tmpfile}"
+
+    # remove files
+    _os_tryrm "${sourcefile}"
+    _os_tryrm "${objectfile}"
+    _os_tryrm "${binaryfile}"
+    return 1
+}
+
+# check csnippets
+_check_csnippets() {
+    local name="${1}"
+    if _check_cxsnippets "${name}" "c"; then
+        return 0
+    fi
     return 1
 }
 
 # check cxxsnippets
 _check_cxxsnippets() {
     local name="${1}"
-    local cxxfuncs=$(_get_option_item "${name}" "cxxfuncs")
-    local cxxincludes=$(_get_option_item "${name}" "cxxincludes")
-    local cxxtypes=$(_get_option_item "${name}" "cxxtypes")
-    local cxxsnippets=$(_get_option_item "${name}" "cxxsnippets")
-    local links=$(_get_option_item "${name}" "links")
-    local syslinks=$(_get_option_item "${name}" "syslinks")
-    if _test_z "${cxxfuncs}" && _test_z "${cxxincludes}" &&
-       _test_z "${cxxtypes}" && _test_z "${cxxsnippets}" &&
-       _test_z "${links}" && _test_z "${syslinks}"; then
+    if _check_cxsnippets "${name}" "cxx"; then
         return 0
     fi
-
     return 1
 }
 
