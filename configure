@@ -3192,6 +3192,35 @@ _gmake_add_clean() {
     _gmake_add_clean_targets
 }
 
+_gmake_add_install_target() {
+    local target=${1}
+    local targetfile=$(_get_target_file "${target}")
+    local filename=$(path_filename "${targetfile}")
+    local installdir=$(_get_target_item "${target}" "installdir")
+    if _test_z "${installdir}"; then
+        echo "TODO"
+    fi
+    print "\t@cp ${targetfile} ${installdir}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
+}
+
+_gmake_add_install_targets() {
+    local targets=""
+    for target in ${_xmake_sh_targets}; do
+        if _is_target_default "${target}"; then
+            targets="${targets} ${target}"
+        fi
+    done
+    echo "install:${targets}" >> "${xmake_sh_projectdir}/Makefile"
+    for target in ${targets}; do
+        _gmake_add_install_target "${target}"
+    done
+    echo "" >> "${xmake_sh_projectdir}/Makefile"
+}
+
+_gmake_add_install() {
+    _gmake_add_install_targets
+}
+
 _gmake_done() {
     echo "makefile is generated!"
 }
@@ -3205,6 +3234,7 @@ _generate_for_gmake() {
     _gmake_add_flags
     _gmake_add_build
     _gmake_add_clean
+    _gmake_add_install
     _gmake_add_run
     _gmake_done
 }
