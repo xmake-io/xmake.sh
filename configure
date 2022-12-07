@@ -183,6 +183,11 @@ _os_find() {
     fi
 }
 
+# get date, "%Y%m%d%H%M" -> 202212072222
+_os_date() {
+    date +"${1}"
+}
+
 path_filename() {
     local filename=`basename -- "${1}"`
     echo "${filename}"
@@ -2870,6 +2875,11 @@ _generate_configfile() {
     if _test_nz "${version_alter}"; then
         _vprint_configvar_value "${content}" "VERSION_ALTER" "${version_alter}"
         content=$(_replace_configvar_value "${content}" "VERSION_ALTER" "${version_alter}")
+    fi
+    if _test_nz "${version_build}"; then
+        version_build=$(_os_date "${version_build}")
+        _vprint_configvar_value "${content}" "VERSION_BUILD" "${version_build}"
+        content=$(_replace_configvar_value "${content}" "VERSION_BUILD" "${version_build}")
     fi
 
     # replace configvars in target
