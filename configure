@@ -148,7 +148,6 @@ _os_tmpfile() {
 _os_runv() {
     local cmd="${@}"
     if ${xmake_sh_diagnosis}; then
-        echo "try running: ${cmd}"
         ${cmd}
     else
         ${cmd} >/dev/null 2>&1
@@ -2106,6 +2105,20 @@ _check_platform() {
     echo "checking for architecture ... ${_target_arch}"
 }
 
+# get toolchain compile command
+_toolchain_compcmd() {
+    local objectfile="${1}"
+    local sourcefile="${2}"
+    echo ""
+}
+
+# get toolchain link command
+_toolchain_linkcmd() {
+    local binaryfile="${1}"
+    local objectfiles="${2}"
+    echo ""
+}
+
 # try make
 _toolchain_try_make() {
     local program=${1}
@@ -2350,6 +2363,9 @@ _check_cxsnippets() {
        _test_z "${links}" && _test_z "${syslinks}"; then
         return 0
     fi
+    if _test_nz "${syslinks}"; then
+        links="${links} ${syslinks}"
+    fi
 
     # get c/c++ extension
     local extension=".c"
@@ -2367,10 +2383,52 @@ _check_cxsnippets() {
     local binaryfile="${tmpfile}.bin"
     echo "${sourcecode}" > "${tmpfile}"
 
+    # try compiling it
+    local compcmd=$(_toolchain_compcmd "${objectfile}" "${sourcefile}")
+    if ${xmake_sh_diagnosis}; then
+        print "> ${compcmd}"
+    fi
+    local ok=false
+    if _os_runv ${compcmd}; then
+        ok=true
+    fi
+
+    # try linking it
+    if ${ok} && _test_nz "${links}"; then
+        local linkcmd=$(_toolchain_linkcmd "${binaryfile}" "${objectfiles}")
+        if ${xmake_sh_diagnosis}; then
+            print "> ${linkcmd}"
+        fi
+        if _os_runv ${compcmd}; then
+            ok=true
+        else
+            ok=false
+        fi
+    fi
+
+    # trace
+    if ${xmake_sh_verbose} || ${xmake_sh_diagnosis}; then
+        if _test_nz "${includes}"; then
+            print "> checking for ${kind} includes(${includes})"
+        fi
+        if _test_nz "${types}"; then
+            print "> checking for ${kind} types(${types})"
+        fi
+        if _test_nz "${funcs}"; then
+            print "> checking for ${kind} funcs(${funcs})"
+        fi
+        if _test_nz "${links}"; then
+            print "> checking for ${kind} links(${links})"
+        fi
+    fi
+
     # remove files
     _os_tryrm "${sourcefile}"
     _os_tryrm "${objectfile}"
     _os_tryrm "${binaryfile}"
+    if ${ok}; then
+        return 0
+    fi
     return 1
 }
 
