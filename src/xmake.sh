@@ -1,5 +1,8 @@
 #!/bin/sh
 
+set_project "hello"
+set_version "1.0.1" "%Y%m%d%H%M"
+
 option "debug" "Enable debug compilation mode." false
 option "tests" "Enable tests." true
 

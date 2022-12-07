@@ -170,6 +170,8 @@ $ make run
 
 ### Supported apis
 
+- [x] set_project
+- [x] set_version
 - [x] includes
 - [x] is_plat
 - [x] is_arch

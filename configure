@@ -546,6 +546,11 @@ is_toolchain() {
 # project configuration apis
 #
 
+# set project name
+set_project() {
+    _xmake_sh_project_name="${1}"
+}
+
 # include the given xmake.sh file or directory
 # e.g. includes "src" "tests"
 includes() {
@@ -1489,6 +1494,17 @@ set_kind() {
     fi
     local kind=${1}
     _set_target_item "${_xmake_sh_target_current}" "kind" "${kind}"
+}
+
+# set version in target
+set_version() {
+    if ! ${_loading_targets}; then
+        return
+    fi
+    local version="${1}"
+    local version_build="${2}"
+    _set_target_item "${_xmake_sh_target_current}" "version" "${version}"
+    _set_target_item "${_xmake_sh_target_current}" "version_build" "${version_build}"
 }
 
 # set default in target
@@ -2738,6 +2754,9 @@ _load_targets() {
     _loading_options=false
     _loading_toolchains=false
     _loading_targets=true
+    _xmake_sh_option_current=""
+    _xmake_sh_target_current=""
+    _xmake_sh_toolchain_current=""
     local file=${xmake_sh_projectdir}/xmake.sh
     if test -f "${file}"; then
         includes "${file}"
@@ -2822,6 +2841,14 @@ _generate_configfile() {
 
     # do replace
     local content=$(cat "${configfile_in}")
+
+    # replace version
+    local version=$(_get_target_item "${target}" "version")
+    local version_build=$(_get_target_item "${target}" "version_build")
+    if _test_nz "${version}"; then
+        _vprint_configvar_value "${content}" "VERSION" "${version}"
+        content=$(_replace_configvar_value "${content}" "VERSION" "${version}")
+    fi
 
     # replace configvars in target
     local configvars=$(_get_target_item "${target}" "configvars")
