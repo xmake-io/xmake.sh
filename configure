@@ -2105,18 +2105,82 @@ _check_platform() {
     echo "checking for architecture ... ${_target_arch}"
 }
 
+# get toolchain compile command for gcc/clang
+_toolchain_compcmd_for_gcc_clang() {
+    local program="${1}"
+    local objectfile="${2}"
+    local sourcefile="${3}"
+    local flags="${4}"
+    echo "${program} -c ${flags} -o ${objectfile} ${sourcefile}"
+}
+
+# get toolchain link command for gcc/clang
+_toolchain_linkcmd_for_gcc_clang() {
+    local targetkind="${1}"
+    local program="${2}"
+    local binaryfile="${3}"
+    local objectfiles="${4}"
+    local flags="${5}"
+    if _test_eq "${targetkind}" "shared"; then
+        flags="-shared -fPIC ${flags}"
+    fi
+    echo "${program} -o ${targetfile} ${objectfiles} ${flags}"
+}
+
+# get toolchain link command for ar
+_toolchain_linkcmd_for_ar() {
+    local targetkind="${1}"
+    local program="${2}"
+    local binaryfile="${3}"
+    local objectfiles="${4}"
+    local flags="${5}"
+    echo "${program} ${flags} ${targetfile} ${objectfiles}"
+}
+
 # get toolchain compile command
 _toolchain_compcmd() {
     local objectfile="${1}"
     local sourcefile="${2}"
-    echo ""
+    local flags="${3}"
+    local sourcekind=$(path_sourcekind "${sourcefile}")
+    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${sourcekind}")
+    local toolname=$(path_toolname "${program}")
+    local compcmd=""
+    case "${toolname}" in
+        gcc) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
+        gxx) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
+        clang) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
+        clangxx) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
+        *) raise "unknown toolname(${toolname})!" ;;
+    esac
+    echo "${compcmd}"
 }
 
 # get toolchain link command
 _toolchain_linkcmd() {
-    local binaryfile="${1}"
-    local objectfiles="${2}"
-    echo ""
+    local targetkind="${1}"
+    local binaryfile="${2}"
+    local objectfiles="${3}"
+    local flags="${4}"
+    local toolkind=""
+    case "${targetkind}" in
+        binary) toolkind="ld";;
+        static) toolkind="ar";;
+        shared) toolkind="sh";;
+        *) raise "unknown targetkind(${targetkind})!" ;;
+    esac
+    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
+    local toolname=$(path_toolname "${program}")
+    local linkcmd=""
+    case "${toolname}" in
+        gcc) compcmd=$(_toolchain_linkcmd_for_gcc_clang "${targetkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
+        gxx) compcmd=$(_toolchain_linkcmd_for_gcc_clang "${targetkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
+        clang) compcmd=$(_toolchain_linkcmd_for_gcc_clang "${targetkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
+        clangxx) compcmd=$(_toolchain_linkcmd_for_gcc_clang "${targetkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
+        ar) compcmd=$(_toolchain_linkcmd_for_ar "${targetkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
+        *) raise "unknown toolname(${toolname})!" ;;
+    esac
+    echo "${linkcmd}"
 }
 
 # try make
@@ -2395,7 +2459,7 @@ _check_cxsnippets() {
 
     # try linking it
     if ${ok} && _test_nz "${links}"; then
-        local linkcmd=$(_toolchain_linkcmd "${binaryfile}" "${objectfiles}")
+        local linkcmd=$(_toolchain_linkcmd "binary" "${binaryfile}" "${objectfiles}")
         if ${xmake_sh_diagnosis}; then
             print "> ${linkcmd}"
         fi
