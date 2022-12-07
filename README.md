@@ -75,6 +75,7 @@ Xmake.sh is a script-only build utility like autotools.
 - [x] Generate makefile
 - [x] Custom toolchains
 - [x] Detect options, code snippets, dependencies, compiler features
+- [x] Support builtin variables
 
 #### In the future it will support
 
