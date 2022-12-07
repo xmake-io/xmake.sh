@@ -1441,6 +1441,47 @@ _get_target_flags() {
     echo "${flags}"
 }
 
+# add file paths in target
+_add_target_filepaths() {
+    local key="$1"
+    shift
+    # we need avoid escape `*` automatically in for-loop
+    local list=$(string_replace "${@}" "\*" "?")
+    for file in ${list}; do
+        file=$(string_replace "${file}" "?" "*")
+        if ! path_is_absolute "${file}"; then
+            file="${xmake_sh_scriptdir}/${file}"
+        fi
+        local files=""
+        if string_contains "${file}" "\*\*"; then
+            local dir=$(path_directory "${file}")
+            local name=$(path_filename "${file}")
+            files=$(_os_find "${dir}" "${name}")
+        elif string_contains "${file}" "\*"; then
+            local dir=$(path_directory "${file}")
+            local name=$(path_filename "${file}")
+            files=$(_os_find "${dir}" "${name}" 1)
+        else
+            files="${file}"
+        fi
+        for file in ${files}; do
+            file=$(path_relative "${xmake_sh_projectdir}" "${file}")
+            _add_target_item "${_xmake_sh_target_current}" "${key}" "${file}"
+        done
+    done
+}
+
+# set target file path
+_set_target_filepath() {
+    local key="${1}"
+    local path="${2}"
+    if ! path_is_absolute "${path}"; then
+        path="${xmake_sh_scriptdir}/${path}"
+    fi
+    path=$(path_relative ${xmake_sh_projectdir} "${path}")
+    _set_target_item "${_xmake_sh_target_current}" "${key}" "${path}"
+}
+
 # set kind in target
 set_kind() {
     if ! ${_loading_targets}; then
@@ -1501,8 +1542,7 @@ set_targetdir() {
     if ! ${_loading_targets}; then
         return
     fi
-    local targetdir="${1}"
-    _set_target_item "${_xmake_sh_target_current}" "targetdir" "${targetdir}"
+    _set_target_filepath "targetdir" "${1}"
 }
 
 # set target object directory
@@ -1510,8 +1550,23 @@ set_objectdir() {
     if ! ${_loading_targets}; then
         return
     fi
-    local objectdir="${1}"
-    _set_target_item "${_xmake_sh_target_current}" "objectdir" "${objectdir}"
+    _set_target_filepath "objectdir" "${1}"
+}
+
+# set target config directory
+set_configdir() {
+    if ! ${_loading_targets}; then
+        return
+    fi
+    _set_target_filepath "configdir" "${1}"
+}
+
+# set target install directory
+set_installdir() {
+    if ! ${_loading_targets}; then
+        return
+    fi
+    _set_target_filepath "installdir" "${1}"
 }
 
 # add deps in target
@@ -1539,30 +1594,23 @@ add_files() {
     if ! ${_loading_targets}; then
         return
     fi
-    # we need avoid escape `*` automatically in for-loop
-    local list=$(string_replace "${@}" "\*" "?")
-    for file in ${list}; do
-        file=$(string_replace "${file}" "?" "*")
-        if ! path_is_absolute "${file}"; then
-            file="${xmake_sh_scriptdir}/${file}"
-        fi
-        local files=""
-        if string_contains "${file}" "\*\*"; then
-            local dir=$(path_directory "${file}")
-            local name=$(path_filename "${file}")
-            files=$(_os_find "${dir}" "${name}")
-        elif string_contains "${file}" "\*"; then
-            local dir=$(path_directory "${file}")
-            local name=$(path_filename "${file}")
-            files=$(_os_find "${dir}" "${name}" 1)
-        else
-            files="${file}"
-        fi
-        for file in ${files}; do
-            file=$(path_relative "${xmake_sh_projectdir}" "${file}")
-            _add_target_item "${_xmake_sh_target_current}" "files" "${file}"
-        done
-    done
+    _add_target_filepaths "files" "$@"
+}
+
+# add header files in target
+add_headerfiles() {
+    if ! ${_loading_targets}; then
+        return
+    fi
+    _add_target_filepaths "headerfiles" "$@"
+}
+
+# add config files in target
+add_configfiles() {
+    if ! ${_loading_targets}; then
+        return
+    fi
+    _add_target_filepaths "configfiles" "$@"
 }
 
 # add defines in target
@@ -2657,6 +2705,12 @@ _check_all() {
     _check_options
 }
 _check_all
+
+#-----------------------------------------------------------------------------
+# init builtin variables, e.g. add_headerfiles "${buildir}/config.h"
+#
+buildir=${xmake_sh_buildir}
+projectdir=${xmake_sh_projectdir}
 
 #-----------------------------------------------------------------------------
 # load project targets

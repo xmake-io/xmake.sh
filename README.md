@@ -74,11 +74,11 @@ Xmake.sh is a script-only build utility like autotools.
 
 - [x] Generate makefile
 - [x] Custom toolchains
+- [x] Detect options, code snippets, dependencies, compiler features
 
 #### In the future it will support
 
 - [ ] Generate build.ninja
-- [ ] Detect options, code snippet, dependencies, compiler features
 - [ ] Support more xmake features
 
 ### New project
@@ -125,6 +125,11 @@ target "demo"
     add_files "*.cpp"
     add_includedirs "foo" "bar"
     add_options "pthread" "cxx_constexpr"
+    add_configfiles "config.h.in"
+    set_configdir "${buildir}/include"
+    add_headerfiles "${buildir}/include/config.h"
+    add_headerfiles "bar/*.h"
+    add_headerfiles "foo/*.h"
     if has_config "debug"; then
         add_defines "DEBUG" "TEST"
     fi
@@ -205,12 +210,12 @@ $ make run
   - [x] add_ldflags
   - [x] add_shflags
   - [x] add_arflags
-  - [ ] set_configdir
-  - [ ] set_configfiles
+  - [x] set_configdir
+  - [x] set_configfiles
   - [ ] set_configvar
-  - [ ] set_installdir
-  - [ ] add_installfiles
-  - [ ] add_headerfiles
+  - [x] set_installdir
+  - [x] add_installfiles
+  - [x] add_headerfiles
   - [x] add_options
 - [x] target_end
 - [x] option
@@ -226,15 +231,14 @@ $ make run
   - [x] add_cflags
   - [x] add_cxflags
   - [x] add_cxxflags
-  - [ ] add_cfuncs
-  - [ ] add_cxxfuncs
-  - [ ] add_cincludes
-  - [ ] add_cxxincludes
-  - [ ] add_ctypes
-  - [ ] add_cxxtypes
-  - [ ] add_csnippets
-  - [ ] add_cxxsnippets
-  - [ ] ...
+  - [x] add_cfuncs
+  - [x] add_cxxfuncs
+  - [x] add_cincludes
+  - [x] add_cxxincludes
+  - [x] add_ctypes
+  - [x] add_cxxtypes
+  - [x] add_csnippets
+  - [x] add_cxxsnippets
 - [x] option_end
 - [x] toolchain
   - [x] set_toolset
