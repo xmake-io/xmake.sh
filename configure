@@ -35,18 +35,6 @@ _die() {
     echo "$@" 1>&2 ; exit 1
 }
 
-_toupper() {
-    echo "$1" | tr '[a-z]' '[A-Z]'
-}
-
-_tolower() {
-    echo "$1" | tr '[A-Z]' '[a-z]'
-}
-
-_replace() {
-    echo "$1" | sed "s/${2}/${3}/g"
-}
-
 _vprint() {
     if "${xmake_sh_verbose}"; then
         echo "$@"
@@ -96,12 +84,24 @@ _test_nq() {
     return 1
 }
 
-# test contains sub-string
+_string_toupper() {
+    echo "$1" | tr '[a-z]' '[A-Z]'
+}
+
+_string_tolower() {
+    echo "$1" | tr '[A-Z]' '[a-z]'
+}
+
+_string_replace() {
+    echo "$1" | sed "s/${2}/${3}/g"
+}
+
+# does contain sub-string?
 # e.g.
 # str="src/*.cpp"
-# _test_contains "$str" "src"
-# _test_contains "$str" "\*"
-_test_contains() {
+# _string_contains "$str" "src"
+# _string_contains "$str" "\*"
+_string_contains() {
     case "${1}" in
         *${2}*) return 0;;
         *) return 1;;
@@ -109,16 +109,24 @@ _test_contains() {
     return 1
 }
 
-# test startswith sub-string
+# does startswith sub-string?
 # e.g.
 # str="src/*.cpp"
-# _test_startswith "$str" "src"
-_test_startswith() {
+# _string_startswith "$str" "src"
+_string_startswith() {
     case "${1}" in
         ${2}*) return 0;;
         *) return 1;;
     esac
     return 1
+}
+
+# duplicate characters
+# e.g. _string_dupch 10 "." => ...........
+_string_dupch() {
+    local count=${1}
+    local ch=${2}
+    printf %${count}s | tr " " "${ch}"
 }
 
 # try remove file or directory
@@ -137,7 +145,7 @@ _os_tmpfile() {
 }
 
 # try run program
-_try_run_program() {
+_os_execv() {
     local program="${1}"
     local argv="${2}"
     if ${xmake_sh_diagnosis}; then
@@ -151,6 +159,23 @@ _try_run_program() {
         return 1
     fi
     return 0
+}
+
+# find file in the given directory
+# e.g. _os_find . xmake.sh
+_os_find() {
+    local dir=${1}
+    local name=${2}
+    local depth=${3}
+    if _test_nz "${depth}"; then
+        if is_host "macosx"; then
+            echo `find ${dir} -depth ${depth} -name "${name}"`
+        else
+            echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+        fi
+    else
+        echo `find ${dir} -name "${name}"`
+    fi
 }
 
 _path_filename() {
@@ -176,7 +201,7 @@ _path_directory() {
 }
 
 _path_is_absolute() {
-    if _test_startswith "${1}" "/"; then
+    if _string_startswith "${1}" "/"; then
         return 0
     fi
     return 1
@@ -222,7 +247,7 @@ _path_relative() {
     echo $result
 }
 
-_path_extension_replace() {
+_path_extension_string_replace() {
     echo "$1" | sed "s/\..*$/$2/"
 }
 
@@ -280,14 +305,6 @@ _get_flagname() {
     echo "${flagname}"
 }
 
-# duplicate characters
-# e.g. _dupch 10 "." => ...........
-_dupch() {
-    local count=${1}
-    local ch=${2}
-    printf %${count}s | tr " " "${ch}"
-}
-
 # is enabled? true, yes, y
 _is_enabled() {
     local value=${1}
@@ -299,23 +316,6 @@ _is_enabled() {
         return 0
     fi
     return 1
-}
-
-# find file in the given directory
-# e.g. _find . xmake.sh
-_find() {
-    local dir=${1}
-    local name=${2}
-    local depth=${3}
-    if _test_nz "${depth}"; then
-        if is_host "macosx"; then
-            echo `find ${dir} -depth ${depth} -name "${name}"`
-        else
-            echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
-        fi
-    else
-        echo `find ${dir} -name "${name}"`
-    fi
 }
 
 #-----------------------------------------------------------------------------
@@ -425,7 +425,7 @@ _map_keys() {
 
 # detect hosts
 os_host=`uname`
-os_host=$(_tolower ${os_host})
+os_host=$(_string_tolower ${os_host})
 if echo "${os_host}" | grep cygwin >/dev/null 2>&1; then
     os_host="cygwin"
 fi
@@ -1041,7 +1041,7 @@ _get_target_objectfile() {
     if is_plat "mingw"; then
         extension=".obj"
     fi
-    filename=$(_path_extension_replace "${filename}" "${extension}")
+    filename=$(_path_extension_string_replace "${filename}" "${extension}")
     local objectdir=$(_get_target_objectdir "${name}")
     local objectfile="${objectdir}/${filename}"
     echo "${objectfile}"
@@ -1079,10 +1079,10 @@ _get_target_abstract_flag_for_gcc_clang() {
         rpathdirs)
             if _test_eq "${toolname}" "gcc" || _test_eq "${toolname}" "gxx"; then
                 # escape $ORIGIN in makefile, TODO we need also handle it for ninja
-                value=$(_replace "${value}" "@loader_path" '$$ORIGIN')
+                value=$(_string_replace "${value}" "@loader_path" '$$ORIGIN')
                 flag="-Wl,-rpath='${value}'"
             elif _test_eq "${toolname}" "clang" || _test_eq "${toolname}" "clangxx"; then
-                value=$(_replace "${value}" "\$ORIGIN" "@loader_path")
+                value=$(_string_replace "${value}" "\$ORIGIN" "@loader_path")
                 flag="-Xlinker -rpath -Xlinker ${value}"
             fi
             ;;
@@ -1516,21 +1516,21 @@ add_files() {
         return
     fi
     # we need avoid escape `*` automatically in for-loop
-    local list=$(_replace "${@}" "\*" "?")
+    local list=$(_string_replace "${@}" "\*" "?")
     for file in ${list}; do
-        file=$(_replace "${file}" "?" "*")
+        file=$(_string_replace "${file}" "?" "*")
         if ! _path_is_absolute "${file}"; then
             file="${xmake_sh_scriptdir}/${file}"
         fi
         local files=""
-        if _test_contains "${file}" "\*\*"; then
+        if _string_contains "${file}" "\*\*"; then
             local dir=$(_path_directory "${file}")
             local name=$(_path_filename "${file}")
-            files=$(_find "${dir}" "${name}")
-        elif _test_contains "${file}" "\*"; then
+            files=$(_os_find "${dir}" "${name}")
+        elif _string_contains "${file}" "\*"; then
             local dir=$(_path_directory "${file}")
             local name=$(_path_filename "${file}")
-            files=$(_find "${dir}" "${name}" 1)
+            files=$(_os_find "${dir}" "${name}" 1)
         else
             files="${file}"
         fi
@@ -1949,7 +1949,7 @@ _show_options_usage() {
     for name in ${options}; do
         local description=$(_get_option_item "${name}" "description")
         local default=$(_get_option_item "${name}" "default")
-        local head="--${name}=$(_toupper ${name})"
+        local head="--${name}=$(_string_toupper ${name})"
         local headsize=${#head}
         local tail="${description}"
         if test "x${default}" != "x"; then
@@ -1963,7 +1963,7 @@ _show_options_usage() {
         fi
         local width=24
         local padding_width=$((${width} - ${headsize}))
-        local padding=$(_dupch ${padding_width} " ")
+        local padding=$(_string_dupch ${padding_width} " ")
         echo "  ${head}${padding}${tail}"
     done
 }
@@ -2110,7 +2110,7 @@ _check_platform() {
 # try make
 _toolchain_try_make() {
     local program=${1}
-    if _try_run_program "${program}" "--version"; then
+    if _os_execv "${program}" "--version"; then
         return 0
     fi
     return 1
@@ -2119,7 +2119,7 @@ _toolchain_try_make() {
 # try ninja
 _toolchain_try_ninja() {
     local program=${1}
-    if _try_run_program "${program}" "--version"; then
+    if _os_execv "${program}" "--version"; then
         return 0
     fi
     return 1
@@ -2135,7 +2135,7 @@ _toolchain_try_gcc() {
 
     local kind=${1}
     local program=${2}
-    if _try_run_program "${program}" "--version"; then
+    if _os_execv "${program}" "--version"; then
         _toolchain_try_gcc_result="ok"
         return 0
     fi
@@ -2153,7 +2153,7 @@ _toolchain_try_gxx() {
 
     local kind=${1}
     local program=${2}
-    if _try_run_program "${program}" "--version"; then
+    if _os_execv "${program}" "--version"; then
         _toolchain_try_gxx_result="ok"
         return 0
     fi
@@ -2171,7 +2171,7 @@ _toolchain_try_clang() {
 
     local kind=${1}
     local program=${2}
-    if _try_run_program "${program}" "--version"; then
+    if _os_execv "${program}" "--version"; then
         _toolchain_try_clang_result="ok"
         return 0
     fi
@@ -2189,7 +2189,7 @@ _toolchain_try_clangxx() {
 
     local kind=${1}
     local program=${2}
-    if _try_run_program "${program}" "--version"; then
+    if _os_execv "${program}" "--version"; then
         _toolchain_try_clangxx_result="ok"
         return 0
     fi
@@ -2438,7 +2438,7 @@ _load_targets() {
         includes "${file}"
     else
         # include all xmake.sh files in next sub-directories
-        local files=$(_find "${xmake_sh_projectdir}" "xmake.sh" 2)
+        local files=$(_os_find "${xmake_sh_projectdir}" "xmake.sh" 2)
         for file in ${files}; do
             includes "${file}"
         done
@@ -2474,7 +2474,7 @@ _gmake_add_flags() {
         for kind in ${kinds}; do
             local flags=$(_get_target_flags "${target}" "${kind}")
             local flagname=$(_get_flagname "${kind}")
-            echo $(_toupper ${target}_${flagname})"=${flags}" >> "${xmake_sh_projectdir}/Makefile"
+            echo $(_string_toupper ${target}_${flagname})"=${flags}" >> "${xmake_sh_projectdir}/Makefile"
         done
         echo "" >> "${xmake_sh_projectdir}/Makefile"
     done
@@ -2484,13 +2484,13 @@ _gmake_add_toolchains() {
     local kinds="cc cxx as mm mxx ld sh ar"
     for kind in ${kinds}; do
         local program=$(_get_toolchain_toolset "${_target_toolchain}" "${kind}")
-        echo $(_toupper ${kind})"=${program}" >> "${xmake_sh_projectdir}/Makefile"
+        echo $(_string_toupper ${kind})"=${program}" >> "${xmake_sh_projectdir}/Makefile"
     done
     echo "" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_object_for_gcc_clang() {
-    local kind=$(_toupper "${1}")
+    local kind=$(_string_toupper "${1}")
     local sourcefile="${2}"
     local objectfile="${3}"
     local flagname="${4}"
@@ -2507,7 +2507,7 @@ _gmake_add_build_object() {
     local program=$(_get_toolchain_toolset "${_target_toolchain}" "${sourcekind}")
     local toolname=$(_path_toolname "${program}")
     local flagname=$(_get_flagname "${sourcekind}")
-    flagname=$(_toupper "${target}_${flagname}")
+    flagname=$(_string_toupper "${target}_${flagname}")
     echo "${objectfile}: ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
     _eprint "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
     case "${toolname}" in
@@ -2530,7 +2530,7 @@ _gmake_add_build_objects() {
 }
 
 _gmake_add_build_target_for_gcc_clang() {
-    local kind=$(_toupper "${1}")
+    local kind=$(_string_toupper "${1}")
     local targetfile="${2}"
     local objectfiles="${3}"
     local flagname="${4}"
@@ -2540,7 +2540,7 @@ _gmake_add_build_target_for_gcc_clang() {
 }
 
 _gmake_add_build_target_for_ar() {
-    local kind=$(_toupper "${1}")
+    local kind=$(_string_toupper "${1}")
     local targetfile="${2}"
     local objectfiles="${3}"
     local flagname="${4}"
@@ -2570,7 +2570,7 @@ _gmake_add_build_target() {
 
     # get linker flags
     local flagname=$(_get_flagname "${toolkind}")
-    flagname=$(_toupper "${target}_${flagname}")
+    flagname=$(_string_toupper "${target}_${flagname}")
 
     # link target
     echo "${target}: ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
