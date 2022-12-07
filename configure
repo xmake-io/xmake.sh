@@ -31,25 +31,25 @@ xmake_sh_copyright="Copyright (C) 2022-present Ruki Wang, tboox.org, xmake.io."
 #-----------------------------------------------------------------------------
 # some helper functions
 #
-_die() {
+raise() {
     echo "$@" 1>&2 ; exit 1
 }
 
-_vprint() {
+vprint() {
     if "${xmake_sh_verbose}"; then
         echo "$@"
     fi
 }
 
-_dprint() {
+dprint() {
     if "${xmake_sh_diagnosis}"; then
         echo "$@"
     fi
 }
 
 # show and escape string instead of `echo -e`, because sh does not support it
-_eprint() {
-    printf "${1}\n"
+print() {
+    printf "${@}\n"
 }
 
 # test empty string
@@ -84,24 +84,24 @@ _test_nq() {
     return 1
 }
 
-_string_toupper() {
+string_toupper() {
     echo "$1" | tr '[a-z]' '[A-Z]'
 }
 
-_string_tolower() {
+string_tolower() {
     echo "$1" | tr '[A-Z]' '[a-z]'
 }
 
-_string_replace() {
+string_replace() {
     echo "$1" | sed "s/${2}/${3}/g"
 }
 
 # does contain sub-string?
 # e.g.
 # str="src/*.cpp"
-# _string_contains "$str" "src"
-# _string_contains "$str" "\*"
-_string_contains() {
+# string_contains "$str" "src"
+# string_contains "$str" "\*"
+string_contains() {
     case "${1}" in
         *${2}*) return 0;;
         *) return 1;;
@@ -112,8 +112,8 @@ _string_contains() {
 # does startswith sub-string?
 # e.g.
 # str="src/*.cpp"
-# _string_startswith "$str" "src"
-_string_startswith() {
+# string_startswith "$str" "src"
+string_startswith() {
     case "${1}" in
         ${2}*) return 0;;
         *) return 1;;
@@ -122,8 +122,8 @@ _string_startswith() {
 }
 
 # duplicate characters
-# e.g. _string_dupch 10 "." => ...........
-_string_dupch() {
+# e.g. string_dupch 10 "." => ...........
+string_dupch() {
     local count=${1}
     local ch=${2}
     printf %${count}s | tr " " "${ch}"
@@ -178,37 +178,37 @@ _os_find() {
     fi
 }
 
-_path_filename() {
+path_filename() {
     local filename=`basename -- "${1}"`
     echo "${filename}"
 }
 
-_path_extension() {
-    local filename=$(_path_filename "${1}")
+path_extension() {
+    local filename=$(path_filename "${1}")
     local extension="${filename##*.}"
     echo ".${extension}"
 }
 
-_path_basename() {
-    local filename=$(_path_filename "${1}")
+path_basename() {
+    local filename=$(path_filename "${1}")
     local basename="${filename%.*}"
     echo "${basename}"
 }
 
-_path_directory() {
+path_directory() {
     local dirname=`dirname -- "${1}"`
     echo "${dirname}"
 }
 
-_path_is_absolute() {
-    if _string_startswith "${1}" "/"; then
+path_is_absolute() {
+    if string_startswith "${1}" "/"; then
         return 0
     fi
     return 1
 }
 
-# get relative path, e.g $(_path_relative ${rootdir} ${absolute_path}`
-_path_relative() {
+# get relative path, e.g $(path_relative ${rootdir} ${absolute_path}`
+path_relative() {
     local source=$1
     local target=$2
 
@@ -247,12 +247,12 @@ _path_relative() {
     echo $result
 }
 
-_path_extension_string_replace() {
+path_extensionstring_replace() {
     echo "$1" | sed "s/\..*$/$2/"
 }
 
-_path_sourcekind() {
-    local extension=$(_path_extension "${1}")
+path_sourcekind() {
+    local extension=$(path_extension "${1}")
     case "${extension}" in
         .c) sourcekind="cc";;
         .cpp) sourcekind="cxx";;
@@ -263,13 +263,13 @@ _path_sourcekind() {
         .S) sourcekind="as";;
         .s) sourcekind="as";;
         .asm) sourcekind="as";;
-        *) _die "unknown sourcekind for ${1}" ;;
+        *) raise "unknown sourcekind for ${1}" ;;
     esac
     echo "${sourcekind}"
 }
 
-_path_toolname() {
-    local basename=$(_path_basename "${1}")
+path_toolname() {
+    local basename=$(path_basename "${1}")
     local toolname=""
     case "${basename}" in
         *-gcc) toolname="gcc";;
@@ -282,7 +282,7 @@ _path_toolname() {
         clang) toolname="clang";;
         *-ar) toolname="ar";;
         ar) toolname="ar";;
-        *) _die "unknown tool for ${basename}";;
+        *) raise "unknown tool for ${basename}";;
     esac
     echo "${toolname}"
 }
@@ -300,7 +300,7 @@ _get_flagname() {
         ar) flagname="arflags";;
         sh) flagname="shflags";;
         ld) flagname="ldflags";;
-        *) _die "unknown toolkind(${toolkind})!" ;;
+        *) raise "unknown toolkind(${toolkind})!" ;;
     esac
     echo "${flagname}"
 }
@@ -425,7 +425,7 @@ _map_keys() {
 
 # detect hosts
 os_host=`uname`
-os_host=$(_string_tolower ${os_host})
+os_host=$(string_tolower ${os_host})
 if echo "${os_host}" | grep cygwin >/dev/null 2>&1; then
     os_host="cygwin"
 fi
@@ -617,7 +617,7 @@ _set_option_item() {
     if _test_nz "${name}"; then
         _map_set "options" "${name}_${key}" "${value}"
     else
-        _die "please call set_${key}(${value}) in the option scope!"
+        raise "please call set_${key}(${value}) in the option scope!"
     fi
 }
 
@@ -631,7 +631,7 @@ _add_option_item() {
         values="${values} ${value}"
         _map_set "options" "${name}_${key}" "${values}"
     else
-        _die "please call add_${key}(${value}) in the option scope!"
+        raise "please call add_${key}(${value}) in the option scope!"
     fi
 }
 
@@ -1036,12 +1036,12 @@ _get_target_sourcefiles() {
 _get_target_objectfile() {
     local name="${1}"
     local sourcefile="${2}"
-    local filename=$(_path_filename "${sourcefile}")
+    local filename=$(path_filename "${sourcefile}")
     local extension=".o"
     if is_plat "mingw"; then
         extension=".obj"
     fi
-    filename=$(_path_extension_string_replace "${filename}" "${extension}")
+    filename=$(path_extensionstring_replace "${filename}" "${extension}")
     local objectdir=$(_get_target_objectdir "${name}")
     local objectfile="${objectdir}/${filename}"
     echo "${objectfile}"
@@ -1079,10 +1079,10 @@ _get_target_abstract_flag_for_gcc_clang() {
         rpathdirs)
             if _test_eq "${toolname}" "gcc" || _test_eq "${toolname}" "gxx"; then
                 # escape $ORIGIN in makefile, TODO we need also handle it for ninja
-                value=$(_string_replace "${value}" "@loader_path" '$$ORIGIN')
+                value=$(string_replace "${value}" "@loader_path" '$$ORIGIN')
                 flag="-Wl,-rpath='${value}'"
             elif _test_eq "${toolname}" "clang" || _test_eq "${toolname}" "clangxx"; then
-                value=$(_string_replace "${value}" "\$ORIGIN" "@loader_path")
+                value=$(string_replace "${value}" "\$ORIGIN" "@loader_path")
                 flag="-Xlinker -rpath -Xlinker ${value}"
             fi
             ;;
@@ -1185,12 +1185,12 @@ _get_target_abstract_flag_for_gcc_clang() {
                     c++20) flag="-std=c++20";;
                     gnuxx20) flag="-std=gnu++20";;
                     gnu++20) flag="-std=gnu++20";;
-                    cxx*) _die "unknown language value(${value})!" ;;
-                    c++*) _die "unknown language value(${value})!" ;;
+                    cxx*) raise "unknown language value(${value})!" ;;
+                    c++*) raise "unknown language value(${value})!" ;;
                 esac
             fi
             ;;
-        *) _die "unknown itemname(${itemname})!" ;;
+        *) raise "unknown itemname(${itemname})!" ;;
     esac
     echo "${flag}"
 }
@@ -1234,7 +1234,7 @@ _get_target_abstract_flags() {
             gxx) flag=$(_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}");;
             clang) flag=$(_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}");;
             clangxx) flag=$(_get_target_abstract_flag_for_gcc_clang "${name}" "${toolkind}" "${toolname}" "${itemname}" "${value}");;
-            *) _die "unknown toolname(${toolname})!" ;;
+            *) raise "unknown toolname(${toolname})!" ;;
         esac
         if _test_nz "${flag}"; then
             flags="${flags} ${flag}"
@@ -1272,7 +1272,7 @@ _get_target_toolchain_flags() {
         clang) flags=$(_get_target_toolchain_flags_for_gcc_clang "${name}" "${toolkind}");;
         clangxx) flags=$(_get_target_toolchain_flags_for_gcc_clang "${name}" "${toolkind}");;
         ar) flags=$(_get_target_toolchain_flags_for_ar "${name}" "${toolkind}");;
-        *) _die "unknown toolname(${toolname})!" ;;
+        *) raise "unknown toolname(${toolname})!" ;;
     esac
     echo "${flags}"
 }
@@ -1282,7 +1282,7 @@ _get_target_compiler_flags() {
     local name="${1}"
     local toolkind="${2}"
     local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(_path_toolname "${program}")
+    local toolname=$(path_toolname "${program}")
     local result=""
 
     # get toolchain flags
@@ -1325,7 +1325,7 @@ _get_target_linker_flags() {
     local name="${1}"
     local toolkind="${2}"
     local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(_path_toolname "${program}")
+    local toolname=$(path_toolname "${program}")
     local result=""
 
     # get toolchain flags
@@ -1346,7 +1346,7 @@ _get_target_linker_flags() {
             if _test_eq "${dep_kind}" "shared"; then
                 local rpathdir="@loader_path"
                 local targetdir=$(_get_targetdir "${name}")
-                local subdir=$(_path_relative "${targetdir}" "${dep_targetdir}")
+                local subdir=$(path_relative "${targetdir}" "${dep_targetdir}")
                 if _test_nz "${subdir}"; then
                     rpathdir="${rpathdir}/${subdir}"
                 fi
@@ -1381,7 +1381,7 @@ _get_target_archiver_flags() {
     local name="${1}"
     local toolkind="${2}"
     local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(_path_toolname "${program}")
+    local toolname=$(path_toolname "${program}")
     local result=""
 
     # get toolchain flags
@@ -1516,26 +1516,26 @@ add_files() {
         return
     fi
     # we need avoid escape `*` automatically in for-loop
-    local list=$(_string_replace "${@}" "\*" "?")
+    local list=$(string_replace "${@}" "\*" "?")
     for file in ${list}; do
-        file=$(_string_replace "${file}" "?" "*")
-        if ! _path_is_absolute "${file}"; then
+        file=$(string_replace "${file}" "?" "*")
+        if ! path_is_absolute "${file}"; then
             file="${xmake_sh_scriptdir}/${file}"
         fi
         local files=""
-        if _string_contains "${file}" "\*\*"; then
-            local dir=$(_path_directory "${file}")
-            local name=$(_path_filename "${file}")
+        if string_contains "${file}" "\*\*"; then
+            local dir=$(path_directory "${file}")
+            local name=$(path_filename "${file}")
             files=$(_os_find "${dir}" "${name}")
-        elif _string_contains "${file}" "\*"; then
-            local dir=$(_path_directory "${file}")
-            local name=$(_path_filename "${file}")
+        elif string_contains "${file}" "\*"; then
+            local dir=$(path_directory "${file}")
+            local name=$(path_filename "${file}")
             files=$(_os_find "${dir}" "${name}" 1)
         else
             files="${file}"
         fi
         for file in ${files}; do
-            file=$(_path_relative "${xmake_sh_projectdir}" "${file}")
+            file=$(path_relative "${xmake_sh_projectdir}" "${file}")
             _add_target_item "${_xmake_sh_target_current}" "files" "${file}"
         done
     done
@@ -1570,10 +1570,10 @@ add_udefines() {
 # add includedirs in target
 add_includedirs() {
     for dir in $@; do
-        if ! _path_is_absolute "${dir}"; then
+        if ! path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
-        dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
+        dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
         if ${_loading_targets} && _test_z "${_xmake_sh_option_current}"; then
             _add_target_item "${_xmake_sh_target_current}" "includedirs" "${dir}"
         elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
@@ -1611,10 +1611,10 @@ add_syslinks() {
 # add linkdirs in target
 add_linkdirs() {
     for dir in $@; do
-        if ! _path_is_absolute "${dir}"; then
+        if ! path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
-        dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
+        dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
         if ${_loading_targets} && _test_z "${_xmake_sh_option_current}"; then
             _add_target_item "${_xmake_sh_target_current}" "linkdirs" "${dir}"
         elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
@@ -1629,10 +1629,10 @@ add_rpathdirs() {
         return
     fi
     for dir in $@; do
-        if ! _path_is_absolute "${dir}"; then
+        if ! path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
-        dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
+        dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
         _add_target_item "${_xmake_sh_target_current}" "rpathdirs" "${dir}"
     done
 }
@@ -1653,10 +1653,10 @@ add_frameworks() {
 # add frameworkdirs in target
 add_frameworkdirs() {
     for dir in $@; do
-        if ! _path_is_absolute "${dir}"; then
+        if ! path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
-        dir=$(_path_relative ${xmake_sh_projectdir} "${dir}")
+        dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
         if ${_loading_targets} && _test_z "${_xmake_sh_option_current}"; then
             _add_target_item "${_xmake_sh_target_current}" "frameworkdirs" "${dir}"
         elif ${_loading_options} && _test_nz "${_xmake_sh_option_current}"; then
@@ -1867,7 +1867,7 @@ _set_toolchain_item() {
     if _test_nz "${name}"; then
         _map_set "toolchains" "${name}_${key}" "${value}"
     else
-        _die "please set toolchain in the toolchain scope!"
+        raise "please set toolchain in the toolchain scope!"
     fi
 }
 
@@ -1949,7 +1949,7 @@ _show_options_usage() {
     for name in ${options}; do
         local description=$(_get_option_item "${name}" "description")
         local default=$(_get_option_item "${name}" "default")
-        local head="--${name}=$(_string_toupper ${name})"
+        local head="--${name}=$(string_toupper ${name})"
         local headsize=${#head}
         local tail="${description}"
         if test "x${default}" != "x"; then
@@ -1963,7 +1963,7 @@ _show_options_usage() {
         fi
         local width=24
         local padding_width=$((${width} - ${headsize}))
-        local padding=$(_string_dupch ${padding_width} " ")
+        local padding=$(string_dupch ${padding_width} " ")
         echo "  ${head}${padding}${tail}"
     done
 }
@@ -2084,7 +2084,7 @@ while test $# != 0; do
     if _handle_option ${1}; then
         shift
     else
-        _die "Unknown option: $1"
+        raise "Unknown option: $1"
     fi
 done
 
@@ -2210,20 +2210,20 @@ _toolchain_try_program() {
     local kind=${2}
     local program=${3}
     local ok=false
-    local toolname=$(_path_toolname "${program}")
+    local toolname=$(path_toolname "${program}")
     case "${toolname}" in
         gcc) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
         gxx) _toolchain_try_gxx "${kind}" "${program}" && ok=true;;
         clang) _toolchain_try_clang "${kind}" "${program}" && ok=true;;
         clangxx) _toolchain_try_clangxx "${kind}" "${program}" && ok=true;;
         ar) _toolchain_try_ar "${kind}" "${program}" && ok=true;;
-        *) _die "unknown toolname(${toolname})!" ;;
+        *) raise "unknown toolname(${toolname})!" ;;
     esac
     if ${ok}; then
-        _vprint "checking for ${program} ... ok"
+        vprint "checking for ${program} ... ok"
         return 0
     fi
-    _vprint "checking for ${program} ... no"
+    vprint "checking for ${program} ... no"
     return 1
 }
 
@@ -2246,7 +2246,7 @@ _toolchain_try_toolset() {
 # try toolchain
 _toolchain_try() {
     local toolchain=${1}
-    _vprint "checking for $toolchain toolchain ..."
+    vprint "checking for $toolchain toolchain ..."
     if _toolchain_try_toolset "${toolchain}" "cc" "c compiler" &&
        _toolchain_try_toolset "${toolchain}" "cxx" "c++ compiler" &&
        _toolchain_try_toolset "${toolchain}" "as" "assembler" &&
@@ -2269,7 +2269,7 @@ _toolchain_detect_make() {
         echo "checking for make ... ok"
     else
         echo "checking for make ... no"
-        _die "make not found!"
+        raise "make not found!"
     fi
 }
 
@@ -2282,7 +2282,7 @@ _toolchain_detect_ninja() {
         echo "checking for ninja ... ok"
     else
         echo "checking for ninja ... no"
-        _die "ninja not found!"
+        raise "ninja not found!"
     fi
 }
 
@@ -2327,7 +2327,7 @@ _check_toolchain() {
         echo "checking for toolchain ... ${_target_toolchain}"
     else
         echo "checking for toolchain ... no"
-        _die "toolchain not found!"
+        raise "toolchain not found!"
     fi
 }
 
@@ -2474,7 +2474,7 @@ _gmake_add_flags() {
         for kind in ${kinds}; do
             local flags=$(_get_target_flags "${target}" "${kind}")
             local flagname=$(_get_flagname "${kind}")
-            echo $(_string_toupper ${target}_${flagname})"=${flags}" >> "${xmake_sh_projectdir}/Makefile"
+            echo $(string_toupper ${target}_${flagname})"=${flags}" >> "${xmake_sh_projectdir}/Makefile"
         done
         echo "" >> "${xmake_sh_projectdir}/Makefile"
     done
@@ -2484,38 +2484,38 @@ _gmake_add_toolchains() {
     local kinds="cc cxx as mm mxx ld sh ar"
     for kind in ${kinds}; do
         local program=$(_get_toolchain_toolset "${_target_toolchain}" "${kind}")
-        echo $(_string_toupper ${kind})"=${program}" >> "${xmake_sh_projectdir}/Makefile"
+        echo $(string_toupper ${kind})"=${program}" >> "${xmake_sh_projectdir}/Makefile"
     done
     echo "" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_object_for_gcc_clang() {
-    local kind=$(_string_toupper "${1}")
+    local kind=$(string_toupper "${1}")
     local sourcefile="${2}"
     local objectfile="${3}"
     local flagname="${4}"
-    local objectdir=$(_path_directory "${objectfile}")
-    _eprint "\t@mkdir -p ${objectdir}" >> "${xmake_sh_projectdir}/Makefile"
-    _eprint "\t\$(V)\$(${kind}) -c \$(${flagname}) -o ${objectfile} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
+    local objectdir=$(path_directory "${objectfile}")
+    print "\t@mkdir -p ${objectdir}" >> "${xmake_sh_projectdir}/Makefile"
+    print "\t\$(V)\$(${kind}) -c \$(${flagname}) -o ${objectfile} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_object() {
     local target=${1}
     local sourcefile="${2}"
     local objectfile="${3}"
-    local sourcekind=$(_path_sourcekind "${sourcefile}")
+    local sourcekind=$(path_sourcekind "${sourcefile}")
     local program=$(_get_toolchain_toolset "${_target_toolchain}" "${sourcekind}")
-    local toolname=$(_path_toolname "${program}")
+    local toolname=$(path_toolname "${program}")
     local flagname=$(_get_flagname "${sourcekind}")
-    flagname=$(_string_toupper "${target}_${flagname}")
+    flagname=$(string_toupper "${target}_${flagname}")
     echo "${objectfile}: ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
-    _eprint "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
+    print "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
     case "${toolname}" in
         gcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
         gxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
         clang) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
         clangxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        *) _die "unknown toolname(${toolname})!" ;;
+        *) raise "unknown toolname(${toolname})!" ;;
     esac
     echo "" >> "${xmake_sh_projectdir}/Makefile"
 }
@@ -2530,23 +2530,23 @@ _gmake_add_build_objects() {
 }
 
 _gmake_add_build_target_for_gcc_clang() {
-    local kind=$(_string_toupper "${1}")
+    local kind=$(string_toupper "${1}")
     local targetfile="${2}"
     local objectfiles="${3}"
     local flagname="${4}"
-    local targetdir=$(_path_directory "${targetfile}")
-    _eprint "\t@mkdir -p ${targetdir}" >> "${xmake_sh_projectdir}/Makefile"
-    _eprint "\t\$(V)\$(${kind}) -o ${targetfile} ${objectfiles} \$(${flagname})" >> "${xmake_sh_projectdir}/Makefile"
+    local targetdir=$(path_directory "${targetfile}")
+    print "\t@mkdir -p ${targetdir}" >> "${xmake_sh_projectdir}/Makefile"
+    print "\t\$(V)\$(${kind}) -o ${targetfile} ${objectfiles} \$(${flagname})" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_target_for_ar() {
-    local kind=$(_string_toupper "${1}")
+    local kind=$(string_toupper "${1}")
     local targetfile="${2}"
     local objectfiles="${3}"
     local flagname="${4}"
-    local targetdir=$(_path_directory "${targetfile}")
-    _eprint "\t@mkdir -p ${targetdir}" >> "${xmake_sh_projectdir}/Makefile"
-    _eprint "\t\$(V)\$(${kind}) \$(${flagname}) ${flags} ${targetfile} ${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
+    local targetdir=$(path_directory "${targetfile}")
+    print "\t@mkdir -p ${targetdir}" >> "${xmake_sh_projectdir}/Makefile"
+    print "\t\$(V)\$(${kind}) \$(${flagname}) ${flags} ${targetfile} ${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_target() {
@@ -2563,26 +2563,26 @@ _gmake_add_build_target() {
         binary) toolkind="ld";;
         static) toolkind="ar";;
         shared) toolkind="sh";;
-        *) _die "unknown targetkind(${targetkind})!" ;;
+        *) raise "unknown targetkind(${targetkind})!" ;;
     esac
     local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(_path_toolname "${program}")
+    local toolname=$(path_toolname "${program}")
 
     # get linker flags
     local flagname=$(_get_flagname "${toolkind}")
-    flagname=$(_string_toupper "${target}_${flagname}")
+    flagname=$(string_toupper "${target}_${flagname}")
 
     # link target
     echo "${target}: ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
     echo "${targetfile}: ${deps}${objectfiles}" >> "${xmake_sh_projectdir}/Makefile"
-    _eprint "\t@echo linking.${_target_mode} ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
+    print "\t@echo linking.${_target_mode} ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
     case "${toolname}" in
         gcc) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flagname}";;
         gxx) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flagname}";;
         clang) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flagname}";;
         clangxx) _gmake_add_build_target_for_gcc_clang "${toolkind}" "${targetfile}" "${objectfiles}" "${flagname}";;
         ar) _gmake_add_build_target_for_ar "${toolkind}" "${targetfile}" "${objectfiles}" "${flagname}";;
-        *) _die "unknown toolname(${toolname})!" ;;
+        *) raise "unknown toolname(${toolname})!" ;;
     esac
     echo "" >> "${xmake_sh_projectdir}/Makefile"
 
@@ -2613,7 +2613,7 @@ _gmake_add_build() {
 _gmake_add_run_target() {
     local target=${1}
     local targetfile=$(_get_target_file "${target}")
-    _eprint "\t@${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
+    print "\t@${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_run_targets() {
@@ -2641,9 +2641,9 @@ _gmake_add_clean_target() {
     local target=${1}
     local targetfile=$(_get_target_file "${target}")
     local objectfiles=$(_get_target_objectfiles "${target}")
-    _eprint "\t@rm ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
+    print "\t@rm ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
     for objectfile in ${objectfiles}; do
-        _eprint "\t@rm ${objectfile}" >> "${xmake_sh_projectdir}/Makefile"
+        print "\t@rm ${objectfile}" >> "${xmake_sh_projectdir}/Makefile"
     done
 }
 
@@ -2688,7 +2688,7 @@ _generate_for_gmake() {
 
 # generate build file for ninja
 _generate_for_ninja() {
-    _die "Ninja generator has been not supported!"
+    raise "Ninja generator has been not supported!"
 }
 
 #-----------------------------------------------------------------------------
@@ -2701,7 +2701,7 @@ _generate_build_file() {
     elif test "x${_project_generator}" = "xninja"; then
         _generate_for_ninja
     else
-        _die "unknown generator: ${_project_generator}"
+        raise "unknown generator: ${_project_generator}"
     fi
 }
 _generate_build_file
