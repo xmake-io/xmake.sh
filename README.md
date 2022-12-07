@@ -93,6 +93,9 @@ We just write `xmake.sh` project file, like this:
 ```sh
 #!/bin/sh
 
+set_project "hello"
+set_version "1.0.1" "%Y%m%d%H%M"
+
 option "debug" "Enable debug compilation mode." false
 option "tests" "Enable tests." true
 
@@ -101,12 +104,14 @@ option "pthread"
     add_cincludes "pthread.h"
     add_cfuncs "pthread_create"
     add_defines "HAS_PTHREAD"
+    set_configvar "HAS_PTHREAD" 1
 option_end
 
 option "cxx_constexpr"
     set_languages "c++11"
     add_cxxsnippets "constexpr int k = 0;"
     add_defines "HAS_CONSTEXPR"
+    set_configvar "HAS_CONSTEXPR" 1
 option_end
 
 set_warnings "all" "error"
