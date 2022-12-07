@@ -2409,7 +2409,10 @@ _check_toolchain() {
 
 # generate cxsnippets source code
 _generate_cxsnippets_sourcecode() {
-    echo ""
+    echo '
+int main(int argc, char** argv) {
+    return 0;
+}'
 }
 
 # check cxsnippets
@@ -2445,7 +2448,7 @@ _check_cxsnippets() {
     local sourcefile="${tmpfile}${extension}"
     local objectfile="${tmpfile}.o"
     local binaryfile="${tmpfile}.bin"
-    echo "${sourcecode}" > "${tmpfile}"
+    echo "${sourcecode}" > "${sourcefile}"
 
     # try compiling it
     local compcmd=$(_toolchain_compcmd "${objectfile}" "${sourcefile}")
@@ -2487,9 +2490,9 @@ _check_cxsnippets() {
     fi
 
     # remove files
-    _os_tryrm "${sourcefile}"
-    _os_tryrm "${objectfile}"
-    _os_tryrm "${binaryfile}"
+#    _os_tryrm "${sourcefile}"
+#    _os_tryrm "${objectfile}"
+#    _os_tryrm "${binaryfile}"
     if ${ok}; then
         return 0
     fi
