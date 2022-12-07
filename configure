@@ -2466,14 +2466,19 @@ _generate_cxsnippets_sourcecode() {
         snippet_funcs="${snippet_funcs}${func}\n    "
     done
 
+    local snippets_code=""
+    if _test_nz "${snippet_includes}"; then
+        snippets_code="${snippets_code}${snippet_includes}\n"
+    fi
+    if _test_nz "${snippet_types}"; then
+        snippets_code="${snippets_code}${snippet_types}\n"
+    fi
+    if _test_nz "${snippets}"; then
+        snippets_code="${snippets_code}${snippets}\n"
+    fi
+
     echo '
-'"${snippet_includes}"'
-
-'"${snippet_types}"'
-
-'"${snippets}"'
-
-int main(int argc, char** argv) {
+'"${snippets_code}"'int main(int argc, char** argv) {
     '"${snippet_funcs}"'
     return 0;
 }'
