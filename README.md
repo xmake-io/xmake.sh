@@ -213,7 +213,7 @@ $ make run
   - [x] add_arflags
   - [x] set_configdir
   - [x] set_configfiles
-  - [ ] set_configvar
+  - [x] set_configvar
   - [x] set_installdir
   - [x] add_installfiles
   - [x] add_headerfiles
