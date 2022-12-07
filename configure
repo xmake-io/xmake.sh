@@ -1181,6 +1181,27 @@ _get_target_abstract_flag_for_gcc_clang() {
     echo "${flag}"
 }
 
+# get values from target
+_get_target_values() {
+    local name="${1}"
+    local itemname="${2}"
+
+    # get values from target
+    local values=$(_get_target_item "${name}" "${itemname}")
+
+    # get values from options in target
+    local options=$(_get_target_item "${name}" "options")
+    for option in ${options}; do
+        if has_config "${option}"; then
+            local option_values=$(_get_option_item "${option}" "${itemname}")
+            if _test_nz "${option_values}"; then
+                values="${values} ${option_values}"
+            fi
+        fi
+    done
+    echo "${values}"
+}
+
 # get abstract flags in target
 _get_target_abstract_flags() {
     local name="${1}"
@@ -1189,7 +1210,7 @@ _get_target_abstract_flags() {
     local itemname="${4}"
     local values="${5}"
     if _test_z "${values}"; then
-        values=$(_get_target_item "${name}" "${itemname}")
+        values=$(_get_target_values "${name}" "${itemname}")
     fi
     local flags=""
     for value in ${values}; do
@@ -1267,17 +1288,17 @@ _get_target_compiler_flags() {
 
     # get raw flags, e.g. add_cflags, add_cxxflags
     local flagname=$(_get_flagname "${toolkind}")
-    local flags=$(_get_target_item "${name}" "${flagname}")
+    local flags=$(_get_target_values "${name}" "${flagname}")
     if _test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
     if _test_eq "${flagname}" "cflags" || _test_eq "${flagname}" "cxxflags"; then
-        flags=$(_get_target_item "${name}" "cxflags")
+        flags=$(_get_target_values "${name}" "cxflags")
         if _test_nz "${flags}"; then
             result="${result} ${flags}"
         fi
     elif _test_eq "${flagname}" "mflags" || _test_eq "${flagname}" "mxxflags"; then
-        flags=$(_get_target_item "${name}" "mxflags")
+        flags=$(_get_target_values "${name}" "mxflags")
         if _test_nz "${flags}"; then
             result="${result} ${flags}"
         fi
@@ -1333,7 +1354,7 @@ _get_target_linker_flags() {
 
     # get raw flags, e.g. add_ldflags, add_shflags
     local flagname=$(_get_flagname "${toolkind}")
-    local flags=$(_get_target_item "${name}" "${flagname}")
+    local flags=$(_get_target_values "${name}" "${flagname}")
     if _test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
@@ -1462,6 +1483,16 @@ add_deps() {
     fi
     for dep in $@; do
         _add_target_item "${_xmake_sh_target_current}" "deps" "${dep}"
+    done
+}
+
+# add options in target
+add_options() {
+    if ! ${_loading_targets}; then
+        return
+    fi
+    for option in $@; do
+        _add_target_item "${_xmake_sh_target_current}" "options" "${option}"
     done
 }
 

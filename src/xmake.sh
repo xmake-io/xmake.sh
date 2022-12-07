@@ -26,6 +26,7 @@ target "demo"
     add_deps "foo" "bar"
     add_files "*.cpp"
     add_includedirs "foo" "bar"
+    add_options "pthread"
     if has_config "debug"; then
         add_defines "DEBUG" "TEST"
     fi

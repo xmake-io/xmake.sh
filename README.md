@@ -95,6 +95,13 @@ We just write `xmake.sh` project file, like this:
 option "debug" "Enable debug compilation mode." false
 option "tests" "Enable tests." true
 
+option "pthread"
+    add_links "pthread"
+    add_cincludes "pthread.h"
+    add_cfuncs "pthread_create"
+    add_defines "HAS_PTHREAD"
+option_end
+
 set_warnings "all" "error"
 set_languages "c99" "c++11"
 if is_mode "debug"; then
@@ -111,6 +118,7 @@ target "demo"
     add_deps "foo" "bar"
     add_files "*.cpp"
     add_includedirs "foo" "bar"
+    add_options "pthread"
     if has_config "debug"; then
         add_defines "DEBUG" "TEST"
     fi
@@ -197,7 +205,7 @@ $ make run
   - [ ] set_installdir
   - [ ] add_installfiles
   - [ ] add_headerfiles
-  - [ ] add_options
+  - [x] add_options
 - [x] target_end
 - [x] option
   - [x] set_default
