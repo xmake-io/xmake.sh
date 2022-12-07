@@ -2286,9 +2286,48 @@ _check_toolchain() {
     fi
 }
 
+# check csnippets
+_check_csnippets() {
+    local name="${1}"
+    local cfuncs=$(_get_option_item "${name}" "cfuncs")
+    local cincludes=$(_get_option_item "${name}" "cincludes")
+    local ctypes=$(_get_option_item "${name}" "ctypes")
+    local csnippets=$(_get_option_item "${name}" "csnippets")
+    local links=$(_get_option_item "${name}" "links")
+    local syslinks=$(_get_option_item "${name}" "syslinks")
+    if _test_z "${cfuncs}" && _test_z "${cincludes}" &&
+       _test_z "${ctypes}" && _test_z "${csnippets}" &&
+       _test_z "${links}" && _test_z "${syslinks}"; then
+        return 0
+    fi
+
+    return 1
+}
+
+# check cxxsnippets
+_check_cxxsnippets() {
+    local name="${1}"
+    local cxxfuncs=$(_get_option_item "${name}" "cxxfuncs")
+    local cxxincludes=$(_get_option_item "${name}" "cxxincludes")
+    local cxxtypes=$(_get_option_item "${name}" "cxxtypes")
+    local cxxsnippets=$(_get_option_item "${name}" "cxxsnippets")
+    local links=$(_get_option_item "${name}" "links")
+    local syslinks=$(_get_option_item "${name}" "syslinks")
+    if _test_z "${cxxfuncs}" && _test_z "${cxxincludes}" &&
+       _test_z "${cxxtypes}" && _test_z "${cxxsnippets}" &&
+       _test_z "${links}" && _test_z "${syslinks}"; then
+        return 0
+    fi
+
+    return 1
+}
+
 # check option
 _check_option() {
     local name="${1}"
+    if _check_csnippets "${name}" && _check_cxxsnippets "${name}"; then
+        return 0
+    fi
     return 1
 }
 
