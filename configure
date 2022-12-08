@@ -1528,6 +1528,10 @@ _add_target_installpaths() {
     if string_contains "${filepattern}" "("; then
         rootdir=$(string_split "${filepattern}" "(" 1)
         rootdir=${rootdir%/}
+        if ! path_is_absolute "${rootdir}"; then
+            rootdir="${xmake_sh_scriptdir}/${rootdir}"
+        fi
+        rootdir=$(path_relative "${xmake_sh_projectdir}" "${rootdir}")
     fi
 
     # remove (), e.g. "src/(*.h)" -> "src/*.h"
@@ -1550,11 +1554,9 @@ _add_target_installpaths() {
     else
         files="${filepattern}"
     fi
-    _add_target_item "${_xmake_sh_target_current}" "${key}_rootdir" "${rootdir}"
-    _add_target_item "${_xmake_sh_target_current}" "${key}_prefixdir" "${prefixdir}"
     for file in ${files}; do
         file=$(path_relative "${xmake_sh_projectdir}" "${file}")
-        _add_target_item "${_xmake_sh_target_current}" "${key}" "${file}"
+        _add_target_item "${_xmake_sh_target_current}" "${key}" "${file}:${rootdir}:${prefixdir}"
     done
 }
 
@@ -3290,8 +3292,9 @@ _gmake_add_install_target() {
         local includedir="${installdir}/${_install_includedir_default}"
         print "\t@mkdir -p ${includedir}" >> "${xmake_sh_projectdir}/Makefile"
         for srcheaderfile in ${headerfiles}; do
-            local rootdir=""
-            local prefixdir=""
+            local rootdir=$(string_split "${srcheaderfile}" ":" 2)
+            local prefixdir=$(string_split "${srcheaderfile}" ":" 3)
+            srcheaderfile=$(string_split "${srcheaderfile}" ":" 1)
             local filename=$(path_filename "${srcheaderfile}")
             local dstheaderdir="${includedir}"
             if _test_nz "${prefixdir}"; then
