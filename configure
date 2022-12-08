@@ -1711,6 +1711,14 @@ add_files() {
     _add_target_filepaths "files" "$@"
 }
 
+# add install files in target
+add_installfiles() {
+    if ! ${_loading_targets}; then
+        return
+    fi
+    _add_target_installpaths "installfiles" "$@"
+}
+
 # add header files in target
 add_headerfiles() {
     if ! ${_loading_targets}; then
@@ -3280,6 +3288,8 @@ _gmake_add_install_target() {
     if _test_z "${installdir}"; then
         installdir=${_install_prefix_default}
     fi
+
+    # install target file
     local targetkind=$(_get_target_item "${target}" "kind")
     if _test_eq "${targetkind}" "binary"; then
         print "\t@mkdir -p ${installdir}/${_install_bindir_default}" >> "${xmake_sh_projectdir}/Makefile"
@@ -3288,6 +3298,8 @@ _gmake_add_install_target() {
         print "\t@mkdir -p ${installdir}/${_install_libdir_default}" >> "${xmake_sh_projectdir}/Makefile"
         print "\t@cp -p ${targetfile} ${installdir}/${_install_libdir_default}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
     fi
+
+    # install header files
     local headerfiles=$(_get_target_item "${target}" "headerfiles")
     if _test_nz "${headerfiles}"; then
         local includedir="${installdir}/${_install_includedir_default}"
@@ -3308,6 +3320,29 @@ _gmake_add_install_target() {
             dstheaderdir=$(path_directory "${dstheaderfile}")
             print "\t@mkdir -p ${dstheaderdir}" >> "${xmake_sh_projectdir}/Makefile"
             print "\t@cp -p ${srcheaderfile} ${dstheaderfile}" >> "${xmake_sh_projectdir}/Makefile"
+        done
+    fi
+
+    # install user files
+    local installfiles=$(_get_target_item "${target}" "installfiles")
+    if _test_nz "${installfiles}"; then
+        for srcinstallfile in ${installfiles}; do
+            local rootdir=$(string_split "${srcinstallfile}" ":" 2)
+            local prefixdir=$(string_split "${srcinstallfile}" ":" 3)
+            srcinstallfile=$(string_split "${srcinstallfile}" ":" 1)
+            local filename=$(path_filename "${srcinstallfile}")
+            local dstinstalldir="${installdir}"
+            if _test_nz "${prefixdir}"; then
+                dstinstalldir="${dstinstalldir}/${prefixdir}"
+            fi
+            local dstinstallfile="${dstinstalldir}/${filename}"
+            if _test_nz "${rootdir}"; then
+                local subfile=$(path_relative "${rootdir}" "${srcinstallfile}")
+                dstinstallfile="${dstinstalldir}/${subfile}"
+            fi
+            dstinstalldir=$(path_directory "${dstinstallfile}")
+            print "\t@mkdir -p ${dstinstalldir}" >> "${xmake_sh_projectdir}/Makefile"
+            print "\t@cp -p ${srcinstallfile} ${dstinstallfile}" >> "${xmake_sh_projectdir}/Makefile"
         done
     fi
 }
