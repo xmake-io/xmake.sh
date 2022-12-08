@@ -2488,7 +2488,26 @@ _toolchain_try_clangxx() {
 _toolchain_try_ar() {
     local kind=${1}
     local program=${2}
-    return 0
+
+    # generate the source file
+    local tmpfile=$(_os_tmpfile)
+    local objectfile="${tmpfile}.o"
+    local libraryfile="${tmpfile}.a"
+    echo "" > "${objectfile}"
+
+    # try linking it
+    local ok=false
+    if _os_runv "${program}" "-cr" "${libraryfile}" "${objectfile}"; then
+        ok=true
+    fi
+
+    # remove files
+    _os_tryrm "${objectfile}"
+    _os_tryrm "${libraryfile}"
+    if ${ok}; then
+        return 0
+    fi
+    return 1
 }
 
 # try program
@@ -2768,7 +2787,7 @@ _check_cxsnippets() {
         if ${xmake_sh_diagnosis}; then
             print "> ${linkcmd}"
         fi
-        if _os_runv ${compcmd}; then
+        if _os_runv ${linkcmd}; then
             ok=true
         else
             ok=false
