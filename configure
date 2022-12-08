@@ -3235,12 +3235,22 @@ _gmake_add_install_target() {
     local targetkind=$(_get_target_item "${target}" "kind")
     if _test_eq "${targetkind}" "binary"; then
         print "\t@mkdir -p ${installdir}/${_install_bindir_default}" >> "${xmake_sh_projectdir}/Makefile"
-        print "\t@cp ${targetfile} ${installdir}/${_install_bindir_default}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
+        print "\t@cp -p ${targetfile} ${installdir}/${_install_bindir_default}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
     elif _test_eq "${targetkind}" "static" || _test_eq "${targetkind}" "shared"; then
         print "\t@mkdir -p ${installdir}/${_install_libdir_default}" >> "${xmake_sh_projectdir}/Makefile"
-        print "\t@cp ${targetfile} ${installdir}/${_install_libdir_default}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
+        print "\t@cp -p ${targetfile} ${installdir}/${_install_libdir_default}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
     fi
-    # TODO installfiles, headerfiles
+    local headerfiles=$(_get_target_item "${target}" "headerfiles")
+    if _test_nz "${headerfiles}"; then
+        local includedir="${installdir}/${_install_includedir_default}"
+        print "\t@mkdir -p ${includedir}" >> "${xmake_sh_projectdir}/Makefile"
+        for srcheaderfile in ${headerfiles}; do
+            local filename=$(path_filename "${srcheaderfile}")
+            local dstheaderdir="${includedir}"
+            local dstheaderfile="${dstheaderdir}/${filename}"
+            print "\t@cp -p ${srcheaderfile} ${dstheaderfile}" >> "${xmake_sh_projectdir}/Makefile"
+        done
+    fi
 }
 
 _gmake_add_install_targets() {
