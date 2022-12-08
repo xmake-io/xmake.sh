@@ -513,6 +513,16 @@ else
     _ninja_program_default="ninja"
 fi
 
+# set the default directories
+if test -d "/usr/local"; then
+    _install_prefix_default="/usr/local"
+elif test -d "/usr"; then
+    _install_prefix_default="/usr"
+fi
+_install_bindir_default="bin"
+_install_libdir_default="lib"
+_install_includedir_default="include"
+
 # determining target platform
 # e.g.
 # if is_plat "linux" "macosx"; then
@@ -2106,6 +2116,7 @@ Common options:
   --version               Only print version information.
   --verbose               Display more information.
   --diagnosis             Display lots of diagnosis information.
+
   --generator=GENERATOR   Set the project generator. (default: '"${_project_generator}"')
                             - gmake
                             - ninja
@@ -2131,6 +2142,12 @@ Common options:
   --toolchain=TOOLCHAIN   Set toolchain name.
                             - clang
                             - gcc
+
+  --prefix=PREFIX         Set install files directory in tree rooted at PREFIX. (default: '"${_install_prefix_default}"')
+  --bindir=DIR            Set install binaries directory in PREFIX/DIR. (default: '"${_install_bindir_default}"')
+  --libdir=DIR            Set install libraries directory in PREFIX/DIR. (default: '"${_install_libdir_default}"')
+  --includedir=DIR        Set install includes directory in PREFIX/DIR. (default: '"${_install_includedir_default}"')
+  --buildir=DIR           Set build directory. (default: '"${xmake_sh_buildir}"')
 
 Project options:
 '"$(_show_options_usage)"'
@@ -2169,38 +2186,53 @@ _parse_argument_value() {
 _handle_option() {
     local name=$(_parse_argument_name ${1})
     local value=$(_parse_argument_value ${1})
-    if test "x${name}" = "xhelp"; then
+    if _test_eq "${name}" "help"; then
         _show_usage
         return 0
-    elif test "x${name}" = "xversion"; then
+    elif _test_eq "${name}" "version"; then
         _show_version
         return 0
-    elif test "x${name}" = "xverbose"; then
+    elif _test_eq "${name}" "verbose"; then
         xmake_sh_verbose=true
         return 0
-    elif test "x${name}" = "xdiagnosis"; then
+    elif _test_eq "${name}" "diagnosis"; then
         xmake_sh_diagnosis=true
         return 0
-    elif test "x${name}" = "xplat"; then
+    elif _test_eq "${name}" "plat"; then
         _target_plat=${value}
         return 0
-    elif test "x${name}" = "xarch"; then
+    elif _test_eq "${name}" "arch"; then
         _target_arch=${value}
         return 0
-    elif test "x${name}" = "xmode"; then
+    elif _test_eq "${name}" "mode"; then
         _target_mode=${value}
         return 0
-    elif test "x${name}" = "xtoolchain"; then
+    elif _test_eq "${name}" "toolchain"; then
         _target_toolchain=${value}
         return 0
-    elif test "x${name}" = "xgenerator"; then
+    elif _test_eq "${name}" "generator"; then
         _project_generator=${value}
         return 0
-    elif test "x${name}" = "xmake"; then
+    elif _test_eq "${name}" "make"; then
         _make_program=${value}
         return 0
-    elif test "x${name}" = "xninja"; then
+    elif _test_eq "${name}" "ninja"; then
         _ninja_program=${value}
+        return 0
+    elif _test_eq "${name}" "prefix"; then
+        _install_prefix_default="${value}"
+        return 0
+    elif _test_eq "${name}" "bindir"; then
+        _install_bindir_default="${value}"
+        return 0
+    elif _test_eq "${name}" "libdir"; then
+        _install_libdir_default="${value}"
+        return 0
+    elif _test_eq "${name}" "includedir"; then
+        _install_includedir_default="${value}"
+        return 0
+    elif _test_eq "${name}" "buildir"; then
+        xmake_sh_buildir="${value}"
         return 0
     elif _has_option "${name}"; then
         _set_option_value "${name}" "${value}"
@@ -3198,9 +3230,17 @@ _gmake_add_install_target() {
     local filename=$(path_filename "${targetfile}")
     local installdir=$(_get_target_item "${target}" "installdir")
     if _test_z "${installdir}"; then
-        echo "TODO"
+        installdir=${_install_prefix_default}
     fi
-    print "\t@cp ${targetfile} ${installdir}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
+    local targetkind=$(_get_target_item "${target}" "kind")
+    if _test_eq "${targetkind}" "binary"; then
+        print "\t@mkdir -p ${installdir}/${_install_bindir_default}" >> "${xmake_sh_projectdir}/Makefile"
+        print "\t@cp ${targetfile} ${installdir}/${_install_bindir_default}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
+    elif _test_eq "${targetkind}" "static" || _test_eq "${targetkind}" "shared"; then
+        print "\t@mkdir -p ${installdir}/${_install_libdir_default}" >> "${xmake_sh_projectdir}/Makefile"
+        print "\t@cp ${targetfile} ${installdir}/${_install_libdir_default}/${filename}" >> "${xmake_sh_projectdir}/Makefile"
+    fi
+    # TODO installfiles, headerfiles
 }
 
 _gmake_add_install_targets() {
