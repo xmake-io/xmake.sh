@@ -1513,6 +1513,47 @@ _add_target_filepaths() {
     done
 }
 
+# add install paths in target
+_add_target_installpaths() {
+    local key="$1"
+    local filepattern="${2}"
+    local prefixdir="${3}"
+
+    # get root directory, e.g. "src/foo/(*.h)" -> "src/foo"
+    local rootdir=""
+    if string_contains "${filepattern}" "("; then
+        rootdir=$(string_split "${filepattern}" "(" 1)
+        rootdir=${rootdir%/}
+    fi
+
+    # remove (), e.g. "src/(*.h)" -> "src/*.h"
+    filepattern=$(string_replace ${filepattern} "(" "")
+    filepattern=$(string_replace ${filepattern} ")" "")
+
+    # get real path
+    if ! path_is_absolute "${filepattern}"; then
+        filepattern="${xmake_sh_scriptdir}/${filepattern}"
+    fi
+    local files=""
+    if string_contains "${filepattern}" "\*\*"; then
+        local dir=$(path_directory "${filepattern}")
+        local name=$(path_filename "${filepattern}")
+        files=$(_os_find "${dir}" "${name}")
+    elif string_contains "${filepattern}" "\*"; then
+        local dir=$(path_directory "${filepattern}")
+        local name=$(path_filename "${filepattern}")
+        files=$(_os_find "${dir}" "${name}" 1)
+    else
+        files="${filepattern}"
+    fi
+    _add_target_item "${_xmake_sh_target_current}" "${key}_rootdir" "${rootdir}"
+    _add_target_item "${_xmake_sh_target_current}" "${key}_prefixdir" "${prefixdir}"
+    for file in ${files}; do
+        file=$(path_relative "${xmake_sh_projectdir}" "${file}")
+        _add_target_item "${_xmake_sh_target_current}" "${key}" "${file}"
+    done
+}
+
 # set target file path
 _set_target_filepath() {
     local key="${1}"
@@ -1668,7 +1709,7 @@ add_headerfiles() {
     if ! ${_loading_targets}; then
         return
     fi
-    _add_target_filepaths "headerfiles" "$@"
+    _add_target_installpaths "headerfiles" "$@"
 }
 
 # add config files in target
@@ -3245,9 +3286,18 @@ _gmake_add_install_target() {
         local includedir="${installdir}/${_install_includedir_default}"
         print "\t@mkdir -p ${includedir}" >> "${xmake_sh_projectdir}/Makefile"
         for srcheaderfile in ${headerfiles}; do
+            local rootdir=""
+            local prefixdir=""
             local filename=$(path_filename "${srcheaderfile}")
             local dstheaderdir="${includedir}"
+            if _test_nz "${prefixdir}"; then
+                dstheaderdir="${dstheaderdir}/${prefixdir}"
+            fi
             local dstheaderfile="${dstheaderdir}/${filename}"
+            if _test_nz "${rootdir}"; then
+                local subdir=$(path_relative "${rootdir}" "${srcheaderfile}")
+                dstheaderfile="${dstheaderdir}/${subdir}"
+            fi
             print "\t@cp -p ${srcheaderfile} ${dstheaderfile}" >> "${xmake_sh_projectdir}/Makefile"
         done
     fi
