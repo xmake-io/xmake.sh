@@ -380,6 +380,10 @@ _map() {
     eval _map_${name}_keys=""
 }
 
+_map_genkey() {
+    echo "$1" | sed 's/[ /*.()+-\$]//g'
+}
+
 _map_count() {
     local name=${1}
     local count=$(eval echo \$_map_${name}_count)
