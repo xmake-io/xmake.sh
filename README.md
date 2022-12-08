@@ -133,9 +133,9 @@ target "demo"
     add_options "pthread" "cxx_constexpr"
     add_configfiles "config.h.in"
     set_configdir "${buildir}/include"
-    add_headerfiles "${buildir}/include/config.h"
-    add_headerfiles "bar/*.h"
-    add_headerfiles "foo/*.h"
+    add_headerfiles "${buildir}/include/config.h" "hello"
+    add_headerfiles "(bar/*.h)" "hello"
+    add_headerfiles "foo/(*.h)" "hello"
     if has_config "debug"; then
         add_defines "DEBUG" "TEST"
     fi
