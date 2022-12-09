@@ -125,6 +125,17 @@ else
     set_optimizes "smallest"
 fi
 
+target "foo"
+    set_kind "static"
+    add_files "*.cpp"
+    add_defines "FOO" "{public}"
+    add_includedirs "." "{public}"
+
+target "bar"
+    set_kind "shared"
+    add_files "*.cpp"
+    add_defines "BAR=\"bar\""
+
 target "demo"
     set_kind "binary"
     add_deps "foo" "bar"
