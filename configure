@@ -100,7 +100,7 @@ string_split() {
     local str="${1}"
     local sep="${2}"
     local idx="${3}"
-    cut -d "${sep}" -f ${idx} <<< "${str}"
+    echo "${str}" | cut -d "${sep}" -f ${idx}
 }
 
 # does contain sub-string?
@@ -341,6 +341,23 @@ _is_enabled() {
         return 0
     fi
     return 1
+}
+
+# deduplicate string list
+# .e.g "hello world hello how are you world" -> hello world how are you
+_dedup() {
+    echo "${1}" | awk '{for (i = 1; i <= NF; ++i) if (!seen[$i]++) printf $i " "}'
+}
+
+# deduplicate string list from the reverse order
+# .e.g "hello world hello how are you world" -> hello how are you world
+_dedup_reverse() {
+    local result=""
+    local list=$(echo "${1}" | awk '{for (i = NF; i > 0; --i) if (!seen[$i]++) printf $i " "}')
+    for item in ${list}; do
+        result="${item} ${result}"
+    done
+    echo "${result}"
 }
 
 #-----------------------------------------------------------------------------
@@ -616,6 +633,12 @@ includes() {
 # some helper functions
 #
 
+# split flags
+_split_flags() {
+    local flags=$(string_replace "${1}" ":" " ")
+    echo "${flags}"
+}
+
 # get abstract flag for gcc/clang
 _get_abstract_flag_for_gcc_clang() {
     local toolkind="${1}"
@@ -630,7 +653,7 @@ _get_abstract_flag_for_gcc_clang() {
         linkdirs) flag="-L${value}";;
         links) flag="-l${value}";;
         syslinks) flag="-l${value}";;
-        frameworks) flag="-framework ${value}";;
+        frameworks) flag="-framework:${value}";;
         frameworkdirs) flag="-F${value}";;
         rpathdirs)
             if test_eq "${toolname}" "gcc" || test_eq "${toolname}" "gxx"; then
@@ -639,7 +662,7 @@ _get_abstract_flag_for_gcc_clang() {
                 flag="-Wl,-rpath='${value}'"
             elif test_eq "${toolname}" "clang" || test_eq "${toolname}" "clangxx"; then
                 value=$(string_replace "${value}" "\$ORIGIN" "@loader_path")
-                flag="-Xlinker -rpath -Xlinker ${value}"
+                flag="-Xlinker:-rpath:-Xlinker:${value}"
             fi
             ;;
         symbols)
@@ -1493,12 +1516,18 @@ _get_target_flags() {
     local flags=""
     if test "x${toolkind}" = "xsh"; then
         flags=$(_get_target_linker_flags "${name}" "${toolkind}")
+        flags=$(_dedup_reverse "${flags}")
+        flags=$(_split_flags "${flags}")
     elif test "x${toolkind}" = "xld"; then
         flags=$(_get_target_linker_flags "${name}" "${toolkind}")
+        flags=$(_dedup_reverse "${flags}")
+        flags=$(_split_flags "${flags}")
     elif test "x${toolkind}" = "xar"; then
         flags=$(_get_target_archiver_flags "${name}" "${toolkind}")
     else
         flags=$(_get_target_compiler_flags "${name}" "${toolkind}")
+        flags=$(_dedup "${flags}")
+        flags=$(_split_flags "${flags}")
     fi
     echo "${flags}"
 }
@@ -2758,6 +2787,7 @@ _check_cxsnippets() {
         for itemname in ${itemnames}; do
             local flags=$(_get_option_abstract_flags "${name}" "${sourcekind}" "${toolname}" "${itemname}")
             if test_nz "${flags}"; then
+                flags=$(_split_flags "${flags}")
                 compflags="${compflags} ${flags}"
             fi
         done
@@ -2792,6 +2822,7 @@ _check_cxsnippets() {
         for itemname in ${itemnames}; do
             local flags=$(_get_option_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}")
             if test_nz "${flags}"; then
+                flags=$(_split_flags "${flags}")
                 linkflags="${linkflags} ${flags}"
             fi
         done
