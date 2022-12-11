@@ -265,11 +265,7 @@ path_relative() {
         result="${forward_part#*/}"
     fi
 
-    echo $result
-}
-
-path_extension_replace() {
-    echo "$1" | sed "s/\..*$/$2/"
+    _ret="$result"
 }
 
 path_sourcekind() {
@@ -307,7 +303,7 @@ path_toolname() {
         ar) toolname="ar";;
         *) raise "unknown tool for ${basename}";;
     esac
-    echo "${toolname}"
+    _ret="${toolname}"
 }
 
 # get flag name from toolkind, e.g. cc => cflags, cxx => cxxflags
@@ -325,7 +321,7 @@ _get_flagname() {
         ld) flagname="ldflags";;
         *) raise "unknown toolkind(${toolkind})!" ;;
     esac
-    echo "${flagname}"
+    _ret="${flagname}"
 }
 
 # is enabled? true, yes, y
@@ -393,10 +389,6 @@ _map() {
     local name=${1}
     eval _map_${name}_count=0
     eval _map_${name}_keys=""
-}
-
-_map_genkey() {
-    echo "$1" | sed 's/[ /*.()+-\$]//g'
 }
 
 _map_count() {
@@ -921,7 +913,7 @@ _get_options_for_menu() {
             options="${options} ${name}"
         fi
     done
-    echo "${options}"
+    _ret="${options}"
 }
 
 # get options for checking
@@ -933,7 +925,7 @@ _get_options_for_checking() {
             options="${options} ${name}"
         fi
     done
-    echo "${options}"
+    _ret="${options}"
 }
 
 # get abstract flags in option
@@ -957,7 +949,7 @@ is_config() {
     local name=${1}
     local value=${2}
     _get_option_value "${name}"; local value_cur="${_ret}"
-    if test "x${value_cur}" = "x${value}"; then
+    if test_eq "${value_cur}" "${value}"; then
         return 0
     fi
     return 1
@@ -1168,7 +1160,7 @@ _get_target_basename() {
     if _has_target_item "${name}" "basename"; then
         _get_target_item "${name}" "basename"; basename="${_ret}"
     fi
-    echo "${basename}"
+    _ret="${basename}"
 }
 
 # get target extension
@@ -1194,7 +1186,7 @@ _get_target_extension() {
             extension=".so"
         fi
     fi
-    echo "${extension}"
+    _ret="${extension}"
 }
 
 # get target prefixname
@@ -1218,22 +1210,22 @@ _get_target_prefixname() {
             prefixname="lib"
         fi
     fi
-    echo "${prefixname}"
+    _ret="${prefixname}"
 }
 
 # get target filename
 _get_target_filename() {
     local name="${1}"
     local filename=""
-    local basename=$(_get_target_basename "${name}")
-    local extension=$(_get_target_extension "${name}")
-    local prefixname=$(_get_target_prefixname "${name}")
+    _get_target_basename "${name}"; local basename="${_ret}"
+    _get_target_extension "${name}"; local extension="${_ret}"
+    _get_target_prefixname "${name}"; local prefixname="${_ret}"
     if _has_target_item "${name}" "filename"; then
         _get_target_item "${name}" "filename"; filename="${_ret}"
     else
         filename="${prefixname}${basename}${extension}"
     fi
-    echo "${filename}"
+    _ret="${filename}"
 }
 
 # get target directory
@@ -1245,7 +1237,7 @@ _get_targetdir() {
     else
         targetdir="${xmake_sh_buildir}/${_target_plat}/${_target_arch}/${_target_mode}"
     fi
-    echo "${targetdir}"
+    _ret="${targetdir}"
 }
 
 # get target object directory
@@ -1257,23 +1249,22 @@ _get_target_objectdir() {
     else
         objectdir="${xmake_sh_buildir}/.objs/${name}/${_target_plat}/${_target_arch}/${_target_mode}"
     fi
-    echo "${objectdir}"
+    _ret="${objectdir}"
 }
 
 # get target file path
 _get_target_file() {
     local name="${1}"
-    local filename=$(_get_target_filename "${name}")
-    local targetdir=$(_get_targetdir "${name}")
+    _get_target_filename "${name}"; local filename="${_ret}"
+    _get_targetdir "${name}"; local targetdir="${_ret}"
     local targetfile="${targetdir}/${filename}"
-    echo "${targetfile}"
+    _ret="${targetfile}"
 }
 
 # get sourcefiles in target
 _get_target_sourcefiles() {
     local name="${1}"
-    _get_target_item "${name}" "files"; local sourcefiles="${_ret}"
-    echo "${sourcefiles}"
+    _get_target_item "${name}" "files"
 }
 
 # get objectfile in target
@@ -1284,21 +1275,21 @@ _get_target_objectfile() {
     if is_plat "mingw"; then
         extension=".obj"
     fi
-    local objectdir=$(_get_target_objectdir "${name}")
+    _get_target_objectdir "${name}"; local objectdir="${_ret}"
     local objectfile="${objectdir}/${sourcefile}${extension}"
-    echo "${objectfile}"
+    _ret="${objectfile}"
 }
 
 # get objectfiles in target
 _get_target_objectfiles() {
     local name="${1}"
-    local sourcefiles=$(_get_target_sourcefiles "${name}")
+    _get_target_sourcefiles "${name}"; local sourcefiles="${_ret}"
     local objectfiles=""
     for sourcefile in ${sourcefiles}; do
-        local objectfile=$(_get_target_objectfile "${name}" "${sourcefile}")
+        _get_target_objectfile "${name}" "${sourcefile}"; local objectfile="${_ret}"
         objectfiles="${objectfiles} ${objectfile}"
     done
-    echo "${objectfiles}"
+    _ret="${objectfiles}"
 }
 
 # get values from target
@@ -1399,8 +1390,8 @@ _get_target_toolchain_flags() {
 _get_target_compiler_flags() {
     local name="${1}"
     local toolkind="${2}"
-    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(path_toolname "${program}")
+    _get_toolchain_toolset "${_target_toolchain}" "${toolkind}"; local program="${_ret}"
+    path_toolname "${program}"; local toolname="${_ret}"
     local result=""
 
     # get toolchain flags
@@ -1419,7 +1410,7 @@ _get_target_compiler_flags() {
     done
 
     # get raw flags, e.g. add_cflags, add_cxxflags
-    local flagname=$(_get_flagname "${toolkind}")
+    _get_flagname "${toolkind}"; local flagname="${_ret}"
     _get_target_values "${name}" "${flagname}"; local flags="${_ret}"
     if test_nz "${flags}"; then
         result="${result} ${flags}"
@@ -1442,8 +1433,8 @@ _get_target_compiler_flags() {
 _get_target_linker_flags() {
     local name="${1}"
     local toolkind="${2}"
-    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(path_toolname "${program}")
+    _get_toolchain_toolset "${_target_toolchain}" "${toolkind}"; local program="${_ret}"
+    path_toolname "${program}"; local toolname="${_ret}"
     local result=""
 
     # get toolchain flags
@@ -1457,14 +1448,14 @@ _get_target_linker_flags() {
     for dep in ${deps}; do
         _get_target_item "${dep}" "kind"; local dep_kind="${_ret}"
         if test_eq "${dep_kind}" "static" || test_eq "${dep_kind}" "shared"; then
-            local dep_targetdir=$(_get_targetdir "${dep}")
-            local dep_basename=$(_get_target_basename "${dep}")
+            _get_targetdir "${dep}"; local dep_targetdir="${_ret}"
+            _get_target_basename "${dep}"; local dep_basename="${_ret}"
             _get_target_abstract_flags "${dep}" "${toolkind}" "${toolname}" "linkdirs" "${dep_targetdir}"; local linkdirs_flags="${_ret}"
             _get_target_abstract_flags "${dep}" "${toolkind}" "${toolname}" "links" "${dep_basename}"; local links_flags="${_ret}"
             if test_eq "${dep_kind}" "shared"; then
                 local rpathdir="@loader_path"
-                local targetdir=$(_get_targetdir "${name}")
-                local subdir=$(path_relative "${targetdir}" "${dep_targetdir}")
+                _get_targetdir "${name}"; local targetdir="${_ret}"
+                path_relative "${targetdir}" "${dep_targetdir}"; local subdir="${_ret}"
                 if test_nz "${subdir}"; then
                     rpathdir="${rpathdir}/${subdir}"
                 fi
@@ -1485,7 +1476,7 @@ _get_target_linker_flags() {
     done
 
     # get raw flags, e.g. add_ldflags, add_shflags
-    local flagname=$(_get_flagname "${toolkind}")
+    _get_flagname "${toolkind}"; local flagname="${_ret}"
     _get_target_values "${name}" "${flagname}"; local flags="${_ret}"
     if test_nz "${flags}"; then
         result="${result} ${flags}"
@@ -1498,8 +1489,8 @@ _get_target_linker_flags() {
 _get_target_archiver_flags() {
     local name="${1}"
     local toolkind="${2}"
-    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(path_toolname "${program}")
+    _get_toolchain_toolset "${_target_toolchain}" "${toolkind}"; local program="${_ret}"
+    path_toolname "${program}"; local toolname="${_ret}"
     local result=""
 
     # get toolchain flags
@@ -1509,13 +1500,13 @@ _get_target_archiver_flags() {
     fi
 
     # get raw flags, e.g. add_arflags
-    local flagname=$(_get_flagname "${toolkind}")
+    _get_flagname "${toolkind}"; local flagname="${_ret}"
     _get_target_item "${name}" "${flagname}"; local flags="${_ret}"
     if test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
 
-    echo "${result}"
+    _ret="${result}"
 }
 
 # get target flags
@@ -1532,13 +1523,13 @@ _get_target_flags() {
         flags=$(_dedup_reverse "${flags}")
         _split_flags "${flags}"; flags="${_ret}"
     elif test "x${toolkind}" = "xar"; then
-        flags=$(_get_target_archiver_flags "${name}" "${toolkind}")
+        _get_target_archiver_flags "${name}" "${toolkind}"; flags="${_ret}"
     else
         _get_target_compiler_flags "${name}" "${toolkind}"; flags="${_ret}"
         flags=$(_dedup "${flags}")
         _split_flags "${flags}"; flags="${_ret}"
     fi
-    echo "${flags}"
+    _ret="${flags}"
 }
 
 # add file paths in target
@@ -1565,7 +1556,7 @@ _add_target_filepaths() {
             files="${file}"
         fi
         for file in ${files}; do
-            file=$(path_relative "${xmake_sh_projectdir}" "${file}")
+            path_relative "${xmake_sh_projectdir}" "${file}"; file="${_ret}"
             _add_target_item "${_xmake_sh_target_current}" "${key}" "${file}"
         done
     done
@@ -1585,7 +1576,7 @@ _add_target_installpaths() {
         if ! path_is_absolute "${rootdir}"; then
             rootdir="${xmake_sh_scriptdir}/${rootdir}"
         fi
-        rootdir=$(path_relative "${xmake_sh_projectdir}" "${rootdir}")
+        path_relative "${xmake_sh_projectdir}" "${rootdir}"; rootdir="${_ret}"
         rootdir=${rootdir%/}
     fi
 
@@ -1610,7 +1601,7 @@ _add_target_installpaths() {
         files="${filepattern}"
     fi
     for file in ${files}; do
-        file=$(path_relative "${xmake_sh_projectdir}" "${file}")
+        path_relative "${xmake_sh_projectdir}" "${file}"; file="${_ret}"
         _add_target_item "${_xmake_sh_target_current}" "${key}" "${file}:${rootdir}:${prefixdir}"
     done
 }
@@ -1622,7 +1613,7 @@ _set_target_filepath() {
     if ! path_is_absolute "${path}"; then
         path="${xmake_sh_scriptdir}/${path}"
     fi
-    path=$(path_relative ${xmake_sh_projectdir} "${path}")
+    path_relative ${xmake_sh_projectdir} "${path}"; path="${_ret}"
     _set_target_item "${_xmake_sh_target_current}" "${key}" "${path}"
 }
 
@@ -1847,7 +1838,7 @@ add_includedirs() {
             if ! path_is_absolute "${dir}"; then
                 dir="${xmake_sh_scriptdir}/${dir}"
             fi
-            dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
+            path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
             if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
                 _add_target_item "${_xmake_sh_target_current}" "includedirs" "${dir}"
             elif ${_loading_options} && test_nz "${_xmake_sh_option_current}"; then
@@ -1863,7 +1854,7 @@ add_includedirs() {
                 if ! path_is_absolute "${dir}"; then
                     dir="${xmake_sh_scriptdir}/${dir}"
                 fi
-                dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
+                path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
                 if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
                     _add_target_item "${_xmake_sh_target_current}" "includedirs_public" "${dir}"
                 fi
@@ -1930,7 +1921,7 @@ add_linkdirs() {
             if ! path_is_absolute "${dir}"; then
                 dir="${xmake_sh_scriptdir}/${dir}"
             fi
-            dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
+            path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
             if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
                 _add_target_item "${_xmake_sh_target_current}" "linkdirs" "${dir}"
             elif ${_loading_options} && test_nz "${_xmake_sh_option_current}"; then
@@ -1946,7 +1937,7 @@ add_linkdirs() {
                 if ! path_is_absolute "${dir}"; then
                     dir="${xmake_sh_scriptdir}/${dir}"
                 fi
-                dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
+                path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
                 if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
                     _add_target_item "${_xmake_sh_target_current}" "linkdirs_public" "${dir}"
                 fi
@@ -1964,7 +1955,7 @@ add_rpathdirs() {
         if ! path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
-        dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
+        path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
         _add_target_item "${_xmake_sh_target_current}" "rpathdirs" "${dir}"
     done
 }
@@ -2000,7 +1991,7 @@ add_frameworkdirs() {
         if ! path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
         fi
-        dir=$(path_relative ${xmake_sh_projectdir} "${dir}")
+        path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
         if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
             _add_target_item "${_xmake_sh_target_current}" "frameworkdirs" "${dir}"
         elif ${_loading_options} && test_nz "${_xmake_sh_option_current}"; then
@@ -2199,8 +2190,7 @@ _has_toolchain() {
 _get_toolchain_item() {
     local name=${1}
     local key=${2}
-    _map_get "toolchains" "${name}_${key}"; local value="${_ret}"
-    echo ${value}
+    _map_get "toolchains" "${name}_${key}"
 }
 
 # set the given toolchain item
@@ -2219,8 +2209,7 @@ _set_toolchain_item() {
 _get_toolchain_toolset() {
     local name=${1}
     local kind=${2}
-    local programs=$(_get_toolchain_item "${name}" "toolset_${kind}")
-    echo ${programs}
+    _get_toolchain_item "${name}" "toolset_${kind}"
 }
 
 # set the give toolchain toolset
@@ -2236,7 +2225,7 @@ _add_toolchain_toolset() {
     local name=${1}
     local kind=${2}
     local program="${3}"
-    local programs=$(_get_toolchain_item "${name}" "toolset_${kind}")
+    _get_toolchain_item "${name}" "toolset_${kind}"; local programs="${_ret}"
     if test_nz "${programs}"; then
         programs="${programs}:${program}"
     else
@@ -2324,7 +2313,7 @@ _load_options_and_toolchains
 
 # show option usage
 _show_options_usage() {
-    local options=$(_get_options_for_menu)
+    _get_options_for_menu; local options="${_ret}"
     for name in ${options}; do
         _get_option_item "${name}" "description"; local description="${_ret}"
         _get_option_item "${name}" "default"; local default="${_ret}"
@@ -2546,8 +2535,8 @@ _toolchain_compcmd() {
     local objectfile="${2}"
     local sourcefile="${3}"
     local flags="${4}"
-    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${sourcekind}")
-    local toolname=$(path_toolname "${program}")
+    _get_toolchain_toolset "${_target_toolchain}" "${sourcekind}"; local program="${_ret}"
+    path_toolname "${program}"; local toolname="${_ret}"
     local compcmd=""
     case "${toolname}" in
         gcc) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
@@ -2565,8 +2554,8 @@ _toolchain_linkcmd() {
     local binaryfile="${2}"
     local objectfiles="${3}"
     local flags="${4}"
-    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(path_toolname "${program}")
+    _get_toolchain_toolset "${_target_toolchain}" "${toolkind}"; local program="${_ret}"
+    path_toolname "${program}"; local toolname="${_ret}"
     local linkcmd=""
     case "${toolname}" in
         gcc) linkcmd=$(_toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
@@ -2702,7 +2691,7 @@ _toolchain_try_program() {
     local kind=${2}
     local program=${3}
     local ok=false
-    local toolname=$(path_toolname "${program}")
+    path_toolname "${program}"; local toolname="${_ret}"
     case "${toolname}" in
         gcc) _toolchain_try_gcc "${kind}" "${program}" && ok=true;;
         gxx) _toolchain_try_gxx "${kind}" "${program}" && ok=true;;
@@ -2730,7 +2719,7 @@ _toolchain_try_toolset() {
         if test_nq "${idx}" "0"; then
             key="${key}_${idx}"
         fi
-        local program=$(_get_toolchain_toolset "${toolchain}" "${key}")
+        _get_toolchain_toolset "${toolchain}" "${key}"; local program="${_ret}"
         if _toolchain_try_program "${toolchain}" "${kind}" "${program}"; then
             _set_toolchain_toolset "${toolchain}" "${kind}" "${program}"
             echo "checking for the ${description} (${kind}) ... ${program}"
@@ -2928,11 +2917,11 @@ _check_cxsnippets() {
     local ok=false
     if ! ${ok}; then
         local compflags=""
-        local program=$(_get_toolchain_toolset "${_target_toolchain}" "${sourcekind}")
-        local toolname=$(path_toolname "${program}")
+        _get_toolchain_toolset "${_target_toolchain}" "${sourcekind}"; local program="${_ret}"
+        path_toolname "${program}"; local toolname="${_ret}"
         local itemnames="languages warnings optimizes defines undefines"
         for itemname in ${itemnames}; do
-            local flags=$(_get_option_abstract_flags "${name}" "${sourcekind}" "${toolname}" "${itemname}")
+            _get_option_abstract_flags "${name}" "${sourcekind}" "${toolname}" "${itemname}"; local flags="${_ret}"
             if test_nz "${flags}"; then
                 _split_flags "${flags}"; flags="${_ret}"
                 compflags="${compflags} ${flags}"
@@ -2962,12 +2951,12 @@ _check_cxsnippets() {
     # try linking it
     if ${ok} && test_nz "${links}"; then
         local toolkind="ld"
-        local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-        local toolname=$(path_toolname "${program}")
+        _get_toolchain_toolset "${_target_toolchain}" "${toolkind}"; local program="${_ret}"
+        path_toolname "${program}"; local toolname="${_ret}"
         local itemnames="linkdirs links syslinks"
         local linkflags=""
         for itemname in ${itemnames}; do
-            local flags=$(_get_option_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}")
+            _get_option_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}"; local flags="${_ret}"
             if test_nz "${flags}"; then
                 _split_flags "${flags}"; flags="${_ret}"
                 linkflags="${linkflags} ${flags}"
@@ -3043,7 +3032,7 @@ _check_option() {
 
 # check options
 _check_options() {
-    local options=$(_get_options_for_checking)
+    _get_options_for_checking; local options="${_ret}"
     for name in $options; do
         if _check_option "$name"; then
             echo "checking for ${name} .. ok"
@@ -3314,8 +3303,8 @@ _gmake_add_flags() {
     local kinds="cc cxx as mm mxx ld sh ar"
     for target in ${_xmake_sh_targets}; do
         for kind in ${kinds}; do
-            local flags=$(_get_target_flags "${target}" "${kind}")
-            local flagname=$(_get_flagname "${kind}")
+            _get_target_flags "${target}" "${kind}"; local flags="${_ret}"
+            _get_flagname "${kind}"; local flagname="${_ret}"
             echo $(string_toupper ${target}_${flagname})"=${flags}" >> "${xmake_sh_projectdir}/Makefile"
         done
         echo "" >> "${xmake_sh_projectdir}/Makefile"
@@ -3325,7 +3314,7 @@ _gmake_add_flags() {
 _gmake_add_toolchains() {
     local kinds="cc cxx as mm mxx ld sh ar"
     for kind in ${kinds}; do
-        local program=$(_get_toolchain_toolset "${_target_toolchain}" "${kind}")
+        _get_toolchain_toolset "${_target_toolchain}" "${kind}"; local program="${_ret}"
         echo $(string_toupper ${kind})"=${program}" >> "${xmake_sh_projectdir}/Makefile"
     done
     echo "" >> "${xmake_sh_projectdir}/Makefile"
@@ -3346,9 +3335,9 @@ _gmake_add_build_object() {
     local sourcefile="${2}"
     local objectfile="${3}"
     path_sourcekind "${sourcefile}"; local sourcekind="${_ret}"
-    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${sourcekind}")
-    local toolname=$(path_toolname "${program}")
-    local flagname=$(_get_flagname "${sourcekind}")
+    _get_toolchain_toolset "${_target_toolchain}" "${sourcekind}"; local program="${_ret}"
+    path_toolname "${program}"; local toolname="${_ret}"
+    _get_flagname "${sourcekind}"; local flagname="${_ret}"
     flagname=$(string_toupper "${target}_${flagname}")
     echo "${objectfile}: ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
     print "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
@@ -3364,9 +3353,9 @@ _gmake_add_build_object() {
 
 _gmake_add_build_objects() {
     local target=${1}
-    local sourcefiles=$(_get_target_sourcefiles "${target}")
+    _get_target_sourcefiles "${target}"; local sourcefiles="${_ret}"
     for sourcefile in ${sourcefiles}; do
-        local objectfile=$(_get_target_objectfile "${target}" "${sourcefile}")
+        _get_target_objectfile "${target}" "${sourcefile}"; local objectfile="${_ret}"
         _gmake_add_build_object "${target}" "${sourcefile}" "${objectfile}"
     done
 }
@@ -3393,10 +3382,10 @@ _gmake_add_build_target_for_ar() {
 
 _gmake_add_build_target() {
     local target=${1}
-    local targetdir=$(_get_targetdir "${target}")
-    local targetfile=$(_get_target_file "${target}")
+    _get_targetdir "${target}"; local targetdir="${_ret}"
+    _get_target_file "${target}"; local targetfile="${_ret}"
     _get_target_item "${target}" "deps"; local deps="${_ret}"
-    local objectfiles=$(_get_target_objectfiles "${target}")
+    _get_target_objectfiles "${target}"; local objectfiles="${_ret}"
 
     # get linker
     _get_target_item "${target}" "kind"; local targetkind="${_ret}"
@@ -3407,11 +3396,11 @@ _gmake_add_build_target() {
         shared) toolkind="sh";;
         *) raise "unknown targetkind(${targetkind})!" ;;
     esac
-    local program=$(_get_toolchain_toolset "${_target_toolchain}" "${toolkind}")
-    local toolname=$(path_toolname "${program}")
+    _get_toolchain_toolset "${_target_toolchain}" "${toolkind}"; local program="${_ret}"
+    path_toolname "${program}"; local toolname="${_ret}"
 
     # get linker flags
-    local flagname=$(_get_flagname "${toolkind}")
+    _get_flagname "${toolkind}"; local flagname="${_ret}"
     flagname=$(string_toupper "${target}_${flagname}")
 
     # link target
@@ -3454,7 +3443,7 @@ _gmake_add_build() {
 
 _gmake_add_run_target() {
     local target=${1}
-    local targetfile=$(_get_target_file "${target}")
+    _get_target_file "${target}"; local targetfile="${_ret}"
     print "\t@${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
 }
 
@@ -3481,8 +3470,8 @@ _gmake_add_run() {
 
 _gmake_add_clean_target() {
     local target=${1}
-    local targetfile=$(_get_target_file "${target}")
-    local objectfiles=$(_get_target_objectfiles "${target}")
+    _get_target_file "${target}"; local targetfile="${_ret}"
+    _get_target_objectfiles "${target}"; local objectfiles="${_ret}"
     print "\t@rm ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
     for objectfile in ${objectfiles}; do
         print "\t@rm ${objectfile}" >> "${xmake_sh_projectdir}/Makefile"
@@ -3509,7 +3498,7 @@ _gmake_add_clean() {
 
 _gmake_add_install_target() {
     local target=${1}
-    local targetfile=$(_get_target_file "${target}")
+    _get_target_file "${target}"; local targetfile="${_ret}"
     path_filename "${targetfile}"; local filename="${_ret}"
     _get_target_item "${target}" "installdir"; local installdir="${_ret}"
     if test_z "${installdir}"; then
@@ -3541,7 +3530,7 @@ _gmake_add_install_target() {
             fi
             local dstheaderfile="${dstheaderdir}/${filename}"
             if test_nz "${rootdir}"; then
-                local subfile=$(path_relative "${rootdir}" "${srcheaderfile}")
+                path_relative "${rootdir}" "${srcheaderfile}"; local subfile="${_ret}"
                 dstheaderfile="${dstheaderdir}/${subfile}"
             fi
             path_directory "${dstheaderfile}"; dstheaderdir="${_ret}"
@@ -3564,7 +3553,7 @@ _gmake_add_install_target() {
             fi
             local dstinstallfile="${dstinstalldir}/${filename}"
             if test_nz "${rootdir}"; then
-                local subfile=$(path_relative "${rootdir}" "${srcinstallfile}")
+                path_relative "${rootdir}" "${srcinstallfile}"; local subfile="${_ret}"
                 dstinstallfile="${dstinstalldir}/${subfile}"
             fi
             path_directory "${dstinstallfile}"; dstinstalldir="${_ret}"
