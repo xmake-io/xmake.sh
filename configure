@@ -85,11 +85,11 @@ test_nq() {
 }
 
 string_toupper() {
-    echo "$1" | tr '[a-z]' '[A-Z]'
+    _ret=$(echo "$1" | tr '[a-z]' '[A-Z]')
 }
 
 string_tolower() {
-    echo "$1" | tr '[A-Z]' '[a-z]'
+    _ret=$(echo "$1" | tr '[A-Z]' '[a-z]')
 }
 
 string_replace() {
@@ -100,7 +100,7 @@ string_split() {
     local str="${1}"
     local sep="${2}"
     local idx="${3}"
-    echo "${str}" | cut -d "${sep}" -f ${idx}
+    _ret=$(echo "${str}" | cut -d "${sep}" -f ${idx})
 }
 
 # does contain sub-string?
@@ -173,10 +173,10 @@ _os_iorunv() {
     ${cmd} >"${tmpfile}" 2>&1
     local ok=$?
     if test "${ok}" -ne "0"; then
-        echo ""
+        _ret=""
     else
         local result=$(cat "${tmpfile}")
-        echo "${result}"
+        _ret="${result}"
     fi
     _os_tryrm "${tmpfile}"
 }
@@ -189,22 +189,22 @@ _os_find() {
     local depth=${3}
     if test_nz "${depth}"; then
         if is_host "macosx"; then
-            echo `find ${dir} -depth ${depth} -name "${name}"`
+            _ret=$(find ${dir} -depth ${depth} -name "${name}")
         else
-            echo `find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}"`
+            _ret=$(find ${dir} -maxdepth ${depth} -mindepth ${depth} -name "${name}")
         fi
     else
-        echo `find ${dir} -name "${name}"`
+        _ret=$(find ${dir} -name "${name}")
     fi
 }
 
 # get date, "%Y%m%d%H%M" -> 202212072222
 _os_date() {
-    date +"${1}"
+    _ret=$(date +"${1}")
 }
 
 path_filename() {
-    _ret=`basename -- "${1}"`
+    _ret=$(basename -- "${1}")
 }
 
 path_extension() {
@@ -218,7 +218,7 @@ path_basename() {
 }
 
 path_directory() {
-    _ret=`dirname -- "${1}"`
+    _ret=$(dirname -- "${1}")
 }
 
 path_is_absolute() {
@@ -461,7 +461,7 @@ _map_keys() {
 
 # detect hosts
 os_host=`uname`
-os_host=$(string_tolower ${os_host})
+string_tolower ${os_host}; os_host="${_ret}"
 if echo "${os_host}" | grep cygwin >/dev/null 2>&1; then
     os_host="cygwin"
 fi
@@ -1547,11 +1547,11 @@ _add_target_filepaths() {
         if string_contains "${file}" "\*\*"; then
             path_directory "${file}"; local dir="${_ret}"
             path_filename "${file}"; local name="${_ret}"
-            files=$(_os_find "${dir}" "${name}")
+            _os_find "${dir}" "${name}"; files="${_ret}"
         elif string_contains "${file}" "\*"; then
             path_directory "${file}"; local dir="${_ret}"
             path_filename "${file}"; local name="${_ret}"
-            files=$(_os_find "${dir}" "${name}" 1)
+            _os_find "${dir}" "${name}" 1; files="${_ret}"
         else
             files="${file}"
         fi
@@ -1571,7 +1571,7 @@ _add_target_installpaths() {
     # get root directory, e.g. "src/foo/(*.h)" -> "src/foo"
     local rootdir=""
     if string_contains "${filepattern}" "("; then
-        rootdir=$(string_split "${filepattern}" "(" 1)
+        string_split "${filepattern}" "(" 1; rootdir="${_ret}"
         rootdir=${rootdir%/}
         if ! path_is_absolute "${rootdir}"; then
             rootdir="${xmake_sh_scriptdir}/${rootdir}"
@@ -1592,11 +1592,11 @@ _add_target_installpaths() {
     if string_contains "${filepattern}" "\*\*"; then
         path_directory "${filepattern}"; local dir="${_ret}"
         path_filename "${filepattern}"; local name="${_ret}"
-        files=$(_os_find "${dir}" "${name}")
+        _os_find "${dir}" "${name}"; files="${_ret}"
     elif string_contains "${filepattern}" "\*"; then
         path_directory "${filepattern}"; local dir="${_ret}"
         path_filename "${filepattern}"; local name="${_ret}"
-        files=$(_os_find "${dir}" "${name}" 1)
+        _os_find "${dir}" "${name}" 1; files="${_ret}"
     else
         files="${filepattern}"
     fi
@@ -2317,7 +2317,7 @@ _show_options_usage() {
     for name in ${options}; do
         _get_option_item "${name}" "description"; local description="${_ret}"
         _get_option_item "${name}" "default"; local default="${_ret}"
-        local head="--${name}=$(string_toupper ${name})"
+        string_toupper ${name}; local head="--${name}="${_ret}""
         local headsize=${#head}
         local tail="${description}"
         if test "x${default}" != "x"; then
@@ -3082,7 +3082,7 @@ _load_targets() {
         includes "${file}"
     else
         # include all xmake.sh files in next sub-directories
-        local files=$(_os_find "${xmake_sh_projectdir}" "xmake.sh" 2)
+        _os_find "${xmake_sh_projectdir}" "xmake.sh" 2; local files="${_ret}"
         for file in ${files}; do
             includes "${file}"
         done
@@ -3169,16 +3169,16 @@ _generate_configfile() {
     else
         target_os="${_target_plat}"
     fi
-    target_os=$(string_toupper ${target_os})
+    string_toupper ${target_os}; target_os="${_ret}"
     _vprint_configvar_value "${content}" "OS" "${target_os}"
     content=$(_replace_configvar_value "${content}" "OS" "${target_os}")
 
     # replace version
     _get_target_item "${target}" "version"; local version="${_ret}"
     _get_target_item "${target}" "version_build"; local version_build="${_ret}"
-    local version_major=$(string_split "${version}" "." 1)
-    local version_minor=$(string_split "${version}" "." 2)
-    local version_alter=$(string_split "${version}" "." 3)
+    string_split "${version}" "." 1; local version_major="${_ret}"
+    string_split "${version}" "." 2; local version_minor="${_ret}"
+    string_split "${version}" "." 3; local version_alter="${_ret}"
     if test_nz "${version}"; then
         _vprint_configvar_value "${content}" "VERSION" "${version}"
         content=$(_replace_configvar_value "${content}" "VERSION" "${version}")
@@ -3196,39 +3196,39 @@ _generate_configfile() {
         content=$(_replace_configvar_value "${content}" "VERSION_ALTER" "${version_alter}")
     fi
     if test_nz "${version_build}"; then
-        version_build=$(_os_date "${version_build}")
+        _os_date "${version_build}"; version_build="${_ret}"
         _vprint_configvar_value "${content}" "VERSION_BUILD" "${version_build}"
         content=$(_replace_configvar_value "${content}" "VERSION_BUILD" "${version_build}")
     fi
 
     # replace git variables
     if string_contains "${content}" "GIT_"; then
-        local git_tag=$(_os_iorunv "git" "describe" "--tags")
+        _os_iorunv "git" "describe" "--tags"; local git_tag="${_ret}"
         if test_nz "${git_tag}"; then
             _vprint_configvar_value "${content}" "GIT_TAG" "${git_tag}"
             content=$(_replace_configvar_value "${content}" "GIT_TAG" "${git_tag}")
         fi
-        local git_tag_long=$(_os_iorunv "git" "describe" "--tags" "--long")
+        _os_iorunv "git" "describe" "--tags" "--long"; local git_tag_long="${_ret}"
         if test_nz "${git_tag_long}"; then
             _vprint_configvar_value "${content}" "GIT_TAG_LONG" "${git_tag_long}"
             content=$(_replace_configvar_value "${content}" "GIT_TAG_LONG" "${git_tag_long}")
         fi
-        local git_branch=$(_os_iorunv "git" "rev-parse" "--abbrev-ref" "HEAD")
+        _os_iorunv "git" "rev-parse" "--abbrev-ref" "HEAD"; local git_branch="${_ret}"
         if test_nz "${git_branch}"; then
             _vprint_configvar_value "${content}" "GIT_BRANCH" "${git_branch}"
             content=$(_replace_configvar_value "${content}" "GIT_BRANCH" "${git_branch}")
         fi
-        local git_commit=$(_os_iorunv "git" "rev-parse" "--short" "HEAD")
+        _os_iorunv "git" "rev-parse" "--short" "HEAD"; local git_commit="${_ret}"
         if test_nz "${git_commit}"; then
             _vprint_configvar_value "${content}" "GIT_COMMIT" "${git_commit}"
             content=$(_replace_configvar_value "${content}" "GIT_COMMIT" "${git_commit}")
         fi
-        local git_commit_long=$(_os_iorunv "git" "rev-parse" "HEAD")
+        _os_iorunv "git" "rev-parse" "HEAD"; local git_commit_long="${_ret}"
         if test_nz "${git_commit_long}"; then
             _vprint_configvar_value "${content}" "GIT_COMMIT_LONG" "${git_commit_long}"
             content=$(_replace_configvar_value "${content}" "GIT_COMMIT_LONG" "${git_commit_long}")
         fi
-        local git_commit_date=$(_os_iorunv "log" "-1" "--date=format:%Y%m%d%H%M%S" "--format=%ad")
+        _os_iorunv "log" "-1" "--date=format:%Y%m%d%H%M%S" "--format=%ad"; local git_commit_date="${_ret}"
         if test_nz "${git_commit_date}"; then
             _vprint_configvar_value "${content}" "GIT_COMMIT_DATE" "${git_commit_date}"
             content=$(_replace_configvar_value "${content}" "GIT_COMMIT_DATE" "${git_commit_date}")
@@ -3305,7 +3305,8 @@ _gmake_add_flags() {
         for kind in ${kinds}; do
             _get_target_flags "${target}" "${kind}"; local flags="${_ret}"
             _get_flagname "${kind}"; local flagname="${_ret}"
-            echo $(string_toupper ${target}_${flagname})"=${flags}" >> "${xmake_sh_projectdir}/Makefile"
+            string_toupper "${target}_${flagname}"; local key="${_ret}"
+            echo "${key}=${flags}" >> "${xmake_sh_projectdir}/Makefile"
         done
         echo "" >> "${xmake_sh_projectdir}/Makefile"
     done
@@ -3315,13 +3316,14 @@ _gmake_add_toolchains() {
     local kinds="cc cxx as mm mxx ld sh ar"
     for kind in ${kinds}; do
         _get_toolchain_toolset "${_target_toolchain}" "${kind}"; local program="${_ret}"
-        echo $(string_toupper ${kind})"=${program}" >> "${xmake_sh_projectdir}/Makefile"
+        string_toupper "${kind}"; local key="${_ret}"
+        echo "${key}=${program}" >> "${xmake_sh_projectdir}/Makefile"
     done
     echo "" >> "${xmake_sh_projectdir}/Makefile"
 }
 
 _gmake_add_build_object_for_gcc_clang() {
-    local kind=$(string_toupper "${1}")
+    string_toupper "${1}"; local kind="${_ret}"
     local sourcefile="${2}"
     local objectfile="${3}"
     local flagname="${4}"
@@ -3338,7 +3340,7 @@ _gmake_add_build_object() {
     _get_toolchain_toolset "${_target_toolchain}" "${sourcekind}"; local program="${_ret}"
     path_toolname "${program}"; local toolname="${_ret}"
     _get_flagname "${sourcekind}"; local flagname="${_ret}"
-    flagname=$(string_toupper "${target}_${flagname}")
+    string_toupper "${target}_${flagname}"; flagname="${_ret}"
     echo "${objectfile}: ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
     print "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_projectdir}/Makefile"
     case "${toolname}" in
@@ -3361,7 +3363,7 @@ _gmake_add_build_objects() {
 }
 
 _gmake_add_build_target_for_gcc_clang() {
-    local kind=$(string_toupper "${1}")
+    string_toupper "${1}"; local kind="${_ret}"
     local targetfile="${2}"
     local objectfiles="${3}"
     local flagname="${4}"
@@ -3371,7 +3373,7 @@ _gmake_add_build_target_for_gcc_clang() {
 }
 
 _gmake_add_build_target_for_ar() {
-    local kind=$(string_toupper "${1}")
+    string_toupper "${1}"; local kind="${_ret}"
     local targetfile="${2}"
     local objectfiles="${3}"
     local flagname="${4}"
@@ -3401,7 +3403,7 @@ _gmake_add_build_target() {
 
     # get linker flags
     _get_flagname "${toolkind}"; local flagname="${_ret}"
-    flagname=$(string_toupper "${target}_${flagname}")
+    string_toupper "${target}_${flagname}"; flagname="${_ret}"
 
     # link target
     echo "${target}: ${targetfile}" >> "${xmake_sh_projectdir}/Makefile"
@@ -3520,9 +3522,9 @@ _gmake_add_install_target() {
     if test_nz "${headerfiles}"; then
         local includedir="${installdir}/${_install_includedir_default}"
         for srcheaderfile in ${headerfiles}; do
-            local rootdir=$(string_split "${srcheaderfile}" ":" 2)
-            local prefixdir=$(string_split "${srcheaderfile}" ":" 3)
-            srcheaderfile=$(string_split "${srcheaderfile}" ":" 1)
+            string_split "${srcheaderfile}" ":" 2; local rootdir="${_ret}"
+            string_split "${srcheaderfile}" ":" 3; local prefixdir="${_ret}"
+            string_split "${srcheaderfile}" ":" 1; srcheaderfile="${_ret}"
             path_filename "${srcheaderfile}"; local filename="${_ret}"
             local dstheaderdir="${includedir}"
             if test_nz "${prefixdir}"; then
@@ -3543,9 +3545,9 @@ _gmake_add_install_target() {
     _get_target_item "${target}" "installfiles"; local installfiles="${_ret}"
     if test_nz "${installfiles}"; then
         for srcinstallfile in ${installfiles}; do
-            local rootdir=$(string_split "${srcinstallfile}" ":" 2)
-            local prefixdir=$(string_split "${srcinstallfile}" ":" 3)
-            srcinstallfile=$(string_split "${srcinstallfile}" ":" 1)
+            string_split "${srcinstallfile}" ":" 2; local rootdir="${_ret}"
+            string_split "${srcinstallfile}" ":" 3; local prefixdir="${_ret}"
+            string_split "${srcinstallfile}" ":" 1; srcinstallfile="${_ret}"
             path_filename "${srcinstallfile}"; local filename="${_ret}"
             local dstinstalldir="${installdir}"
             if test_nz "${prefixdir}"; then
