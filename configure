@@ -340,7 +340,7 @@ _is_enabled() {
 # deduplicate string list
 # .e.g "hello world hello how are you world" -> hello world how are you
 _dedup() {
-    echo "${1}" | awk '{for (i = 1; i <= NF; ++i) if (!seen[$i]++) printf $i " "}'
+    _ret=$(echo "${1}" | awk '{for (i = 1; i <= NF; ++i) if (!seen[$i]++) printf $i " "}')
 }
 
 # deduplicate string list from the reverse order
@@ -351,7 +351,7 @@ _dedup_reverse() {
     for item in ${list}; do
         result="${item} ${result}"
     done
-    echo "${result}"
+    _ret="${result}"
 }
 
 #-----------------------------------------------------------------------------
@@ -1482,7 +1482,7 @@ _get_target_linker_flags() {
         result="${result} ${flags}"
     fi
 
-    echo "${result}"
+    _ret="${result}"
 }
 
 # get archiver flags in target
@@ -1514,19 +1514,19 @@ _get_target_flags() {
     local name="${1}"
     local toolkind="${2}"
     local flags=""
-    if test "x${toolkind}" = "xsh"; then
-        flags=$(_get_target_linker_flags "${name}" "${toolkind}")
-        flags=$(_dedup_reverse "${flags}")
+    if test_eq "${toolkind}" "sh"; then
+        _get_target_linker_flags "${name}" "${toolkind}"; flags="${_ret}"
+        _dedup_reverse "${flags}"; flags="${_ret}"
         _split_flags "${flags}"; flags="${_ret}"
-    elif test "x${toolkind}" = "xld"; then
-        flags=$(_get_target_linker_flags "${name}" "${toolkind}")
-        flags=$(_dedup_reverse "${flags}")
+    elif test_eq "${toolkind}" "ld"; then
+        _get_target_linker_flags "${name}" "${toolkind}"; flags="${_ret}"
+        _dedup_reverse "${flags}"; flags="${_ret}"
         _split_flags "${flags}"; flags="${_ret}"
-    elif test "x${toolkind}" = "xar"; then
+    elif test_eq "${toolkind}" "ar"; then
         _get_target_archiver_flags "${name}" "${toolkind}"; flags="${_ret}"
     else
         _get_target_compiler_flags "${name}" "${toolkind}"; flags="${_ret}"
-        flags=$(_dedup "${flags}")
+        _dedup "${flags}"; flags="${_ret}"
         _split_flags "${flags}"; flags="${_ret}"
     fi
     _ret="${flags}"
@@ -2404,18 +2404,18 @@ _show_version() {
 
 # --foo=yes => foo
 _parse_argument_name() {
-    echo "${1#*--}" | sed "s/${2-=[^=]*}$//"
+    _ret=$(echo "${1#*--}" | sed "s/${2-=[^=]*}$//")
 }
 
 # --foo=yes => yes
 _parse_argument_value() {
-    echo "$1" | sed "s/^${2-[^=]*=}//"
+    _ret=$(echo "$1" | sed "s/^${2-[^=]*=}//")
 }
 
 # parse input arguments
 _handle_option() {
-    local name=$(_parse_argument_name ${1})
-    local value=$(_parse_argument_value ${1})
+    _parse_argument_name ${1}; local name="${_ret}"
+    _parse_argument_value ${1}; local value="${_ret}"
     if test_eq "${name}" "help"; then
         _show_usage
         return 0
@@ -2503,7 +2503,7 @@ _toolchain_compcmd_for_gcc_clang() {
     local objectfile="${2}"
     local sourcefile="${3}"
     local flags="${4}"
-    echo "${program} -c ${flags} -o ${objectfile} ${sourcefile}"
+    _ret="${program} -c ${flags} -o ${objectfile} ${sourcefile}"
 }
 
 # get toolchain link command for gcc/clang
@@ -2516,7 +2516,7 @@ _toolchain_linkcmd_for_gcc_clang() {
     if test_eq "${toolkind}" "sh"; then
         flags="-shared -fPIC ${flags}"
     fi
-    echo "${program} -o ${binaryfile} ${objectfiles} ${flags}"
+    _ret="${program} -o ${binaryfile} ${objectfiles} ${flags}"
 }
 
 # get toolchain link command for ar
@@ -2526,7 +2526,7 @@ _toolchain_linkcmd_for_ar() {
     local binaryfile="${3}"
     local objectfiles="${4}"
     local flags="${5}"
-    echo "${program} ${flags} ${binaryfile} ${objectfiles}"
+    _ret="${program} ${flags} ${binaryfile} ${objectfiles}"
 }
 
 # get toolchain compile command
@@ -2539,13 +2539,13 @@ _toolchain_compcmd() {
     path_toolname "${program}"; local toolname="${_ret}"
     local compcmd=""
     case "${toolname}" in
-        gcc) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
-        gxx) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
-        clang) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
-        clangxx) compcmd=$(_toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}");;
+        gcc) _toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}"; compcmd="${_ret}";;
+        gxx) _toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}"; compcmd="${_ret}";;
+        clang) _toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}"; compcmd="${_ret}";;
+        clangxx) _toolchain_compcmd_for_gcc_clang "${program}" "${objectfile}" "${sourcefile}" "${flags}"; compcmd="${_ret}";;
         *) raise "unknown toolname(${toolname})!" ;;
     esac
-    echo "${compcmd}"
+    _ret="${compcmd}"
 }
 
 # get toolchain link command
@@ -2558,14 +2558,14 @@ _toolchain_linkcmd() {
     path_toolname "${program}"; local toolname="${_ret}"
     local linkcmd=""
     case "${toolname}" in
-        gcc) linkcmd=$(_toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
-        gxx) linkcmd=$(_toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
-        clang) compcmd=$(_toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
-        clangxx) linkcmd=$(_toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
-        ar) linkcmd=$(_toolchain_linkcmd_for_ar "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}");;
+        gcc) _toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}"; linkcmd="${_ret}";;
+        gxx) _toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}"; linkcmd="${_ret}";;
+        clang) _toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}"; compcmd="${_ret}";;
+        clangxx) _toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}"; linkcmd="${_ret}";;
+        ar) _toolchain_linkcmd_for_ar "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}"; linkcmd="${_ret}";;
         *) raise "unknown toolname(${toolname})!" ;;
     esac
-    echo "${linkcmd}"
+    _ret="${linkcmd}"
 }
 
 # try make
@@ -2830,7 +2830,7 @@ _get_funccode() {
     else
         code="volatile void* p${func} = (void*)&${func};"
     fi
-    echo "${code}"
+    _ret="${code}"
 }
 
 # generate cxsnippets source code
@@ -2853,7 +2853,7 @@ _generate_cxsnippets_sourcecode() {
 
     local snippet_funcs=""
     for func in $funcs; do
-        func=$(_get_funccode "${func}")
+        _get_funccode "${func}"; func="${_ret}"
         snippet_funcs="${snippet_funcs}${func}\n    "
     done
 
@@ -2868,7 +2868,7 @@ _generate_cxsnippets_sourcecode() {
         snippets_code="${snippets_code}${snippets}\n"
     fi
 
-    echo '
+    _ret='
 '"${snippets_code}"'int main(int argc, char** argv) {
     '"${snippet_funcs}"'
     return 0;
@@ -2902,7 +2902,7 @@ _check_cxsnippets() {
     fi
 
     # generate source code
-    local sourcecode=$(_generate_cxsnippets_sourcecode "${funcs}" "${includes}" "${types}" "${snippets}")
+    _generate_cxsnippets_sourcecode "${funcs}" "${includes}" "${types}" "${snippets}"; local sourcecode="${_ret}"
     dprint "${sourcecode}"
 
     # generate the source file
@@ -2939,7 +2939,7 @@ _check_cxsnippets() {
                 compflags="${compflags} ${flags}"
             fi
         done
-        local compcmd=$(_toolchain_compcmd "${sourcekind}" "${objectfile}" "${sourcefile}" "${compflags}")
+        _toolchain_compcmd "${sourcekind}" "${objectfile}" "${sourcefile}" "${compflags}"; local compcmd="${_ret}"
         if ${xmake_sh_diagnosis}; then
             print "> ${compcmd}"
         fi
@@ -2966,7 +2966,7 @@ _check_cxsnippets() {
         if test_nz "${flags}"; then
             linkflags="${linkflags} ${flags}"
         fi
-        local linkcmd=$(_toolchain_linkcmd "${toolkind}" "${binaryfile}" "${objectfile}" "${linkflags}")
+        _toolchain_linkcmd "${toolkind}" "${binaryfile}" "${objectfile}" "${linkflags}"; local linkcmd="${_ret}"
         if ${xmake_sh_diagnosis}; then
             print "> ${linkcmd}"
         fi
@@ -3132,7 +3132,7 @@ _replace_configvar_define() {
     else
         string_replace "${content}" "\${define ${name}}" "#define ${name} ${value}"; content="${_ret}"
     fi
-    echo "${content}"
+    _ret="${content}"
 }
 
 # replace config variable in `${name}`
@@ -3141,7 +3141,7 @@ _replace_configvar_value() {
     local name="${2}"
     local value="${3}"
     string_replace "${content}" "\${${name}}" "${value}"; content="${_ret}"
-    echo "${content}"
+    _ret="${content}"
 }
 
 # generate configfile for the given target
@@ -3171,7 +3171,7 @@ _generate_configfile() {
     fi
     string_toupper ${target_os}; target_os="${_ret}"
     _vprint_configvar_value "${content}" "OS" "${target_os}"
-    content=$(_replace_configvar_value "${content}" "OS" "${target_os}")
+    _replace_configvar_value "${content}" "OS" "${target_os}"; content="${_ret}"
 
     # replace version
     _get_target_item "${target}" "version"; local version="${_ret}"
@@ -3181,24 +3181,24 @@ _generate_configfile() {
     string_split "${version}" "." 3; local version_alter="${_ret}"
     if test_nz "${version}"; then
         _vprint_configvar_value "${content}" "VERSION" "${version}"
-        content=$(_replace_configvar_value "${content}" "VERSION" "${version}")
+        _replace_configvar_value "${content}" "VERSION" "${version}"; content="${_ret}"
     fi
     if test_nz "${version_major}"; then
         _vprint_configvar_value "${content}" "VERSION_MAJOR" "${version_major}"
-        content=$(_replace_configvar_value "${content}" "VERSION_MAJOR" "${version_major}")
+        _replace_configvar_value "${content}" "VERSION_MAJOR" "${version_major}"; content="${_ret}"
     fi
     if test_nz "${version_minor}"; then
         _vprint_configvar_value "${content}" "VERSION_MINOR" "${version_minor}"
-        content=$(_replace_configvar_value "${content}" "VERSION_MINOR" "${version_minor}")
+        _replace_configvar_value "${content}" "VERSION_MINOR" "${version_minor}"; content="${_ret}"
     fi
     if test_nz "${version_alter}"; then
         _vprint_configvar_value "${content}" "VERSION_ALTER" "${version_alter}"
-        content=$(_replace_configvar_value "${content}" "VERSION_ALTER" "${version_alter}")
+        _replace_configvar_value "${content}" "VERSION_ALTER" "${version_alter}"; content="${_ret}"
     fi
     if test_nz "${version_build}"; then
         _os_date "${version_build}"; version_build="${_ret}"
         _vprint_configvar_value "${content}" "VERSION_BUILD" "${version_build}"
-        content=$(_replace_configvar_value "${content}" "VERSION_BUILD" "${version_build}")
+        _replace_configvar_value "${content}" "VERSION_BUILD" "${version_build}"; content="${_ret}"
     fi
 
     # replace git variables
@@ -3206,32 +3206,32 @@ _generate_configfile() {
         _os_iorunv "git" "describe" "--tags"; local git_tag="${_ret}"
         if test_nz "${git_tag}"; then
             _vprint_configvar_value "${content}" "GIT_TAG" "${git_tag}"
-            content=$(_replace_configvar_value "${content}" "GIT_TAG" "${git_tag}")
+            _replace_configvar_value "${content}" "GIT_TAG" "${git_tag}"; content="${_ret}"
         fi
         _os_iorunv "git" "describe" "--tags" "--long"; local git_tag_long="${_ret}"
         if test_nz "${git_tag_long}"; then
             _vprint_configvar_value "${content}" "GIT_TAG_LONG" "${git_tag_long}"
-            content=$(_replace_configvar_value "${content}" "GIT_TAG_LONG" "${git_tag_long}")
+            _replace_configvar_value "${content}" "GIT_TAG_LONG" "${git_tag_long}"; content="${_ret}"
         fi
         _os_iorunv "git" "rev-parse" "--abbrev-ref" "HEAD"; local git_branch="${_ret}"
         if test_nz "${git_branch}"; then
             _vprint_configvar_value "${content}" "GIT_BRANCH" "${git_branch}"
-            content=$(_replace_configvar_value "${content}" "GIT_BRANCH" "${git_branch}")
+            _replace_configvar_value "${content}" "GIT_BRANCH" "${git_branch}"; content="${_ret}"
         fi
         _os_iorunv "git" "rev-parse" "--short" "HEAD"; local git_commit="${_ret}"
         if test_nz "${git_commit}"; then
             _vprint_configvar_value "${content}" "GIT_COMMIT" "${git_commit}"
-            content=$(_replace_configvar_value "${content}" "GIT_COMMIT" "${git_commit}")
+            _replace_configvar_value "${content}" "GIT_COMMIT" "${git_commit}"; content="${_ret}"
         fi
         _os_iorunv "git" "rev-parse" "HEAD"; local git_commit_long="${_ret}"
         if test_nz "${git_commit_long}"; then
             _vprint_configvar_value "${content}" "GIT_COMMIT_LONG" "${git_commit_long}"
-            content=$(_replace_configvar_value "${content}" "GIT_COMMIT_LONG" "${git_commit_long}")
+            _replace_configvar_value "${content}" "GIT_COMMIT_LONG" "${git_commit_long}"; content="${_ret}"
         fi
         _os_iorunv "log" "-1" "--date=format:%Y%m%d%H%M%S" "--format=%ad"; local git_commit_date="${_ret}"
         if test_nz "${git_commit_date}"; then
             _vprint_configvar_value "${content}" "GIT_COMMIT_DATE" "${git_commit_date}"
-            content=$(_replace_configvar_value "${content}" "GIT_COMMIT_DATE" "${git_commit_date}")
+            _replace_configvar_value "${content}" "GIT_COMMIT_DATE" "${git_commit_date}"; content="${_ret}"
         fi
     fi
 
@@ -3241,8 +3241,8 @@ _generate_configfile() {
         _get_target_item "${target}" "configvar_${name}"; local value="${_ret}"
         _vprint_configvar_define "${content}" "${name}" "${value}"
         _vprint_configvar_value "${content}" "${name}" "${value}"
-        content=$(_replace_configvar_define "${content}" "${name}" "${value}")
-        content=$(_replace_configvar_value "${content}" "${name}" "${value}")
+        _replace_configvar_define "${content}" "${name}" "${value}"; content="${_ret}"
+        _replace_configvar_value "${content}" "${name}" "${value}"; content="${_ret}"
     done
 
     # replace configvars in target/options
@@ -3256,8 +3256,8 @@ _generate_configfile() {
             fi
             _vprint_configvar_define "${content}" "${name}" "${value}"
             _vprint_configvar_value "${content}" "${name}" "${value}"
-            content=$(_replace_configvar_define "${content}" "${name}" "${value}")
-            content=$(_replace_configvar_value "${content}" "${name}" "${value}")
+            _replace_configvar_define "${content}" "${name}" "${value}"; content="${_ret}"
+            _replace_configvar_value "${content}" "${name}" "${value}"; content="${_ret}"
         done
     done
 
