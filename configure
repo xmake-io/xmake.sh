@@ -276,7 +276,7 @@ path_sourcekind() {
         .cc) sourcekind="cxx";;
         .ixx) sourcekind="cxx";;
         .m) sourcekind="mm";;
-        .mxx) sourcekind="mxx";;
+        .mm) sourcekind="mxx";;
         .S) sourcekind="as";;
         .s) sourcekind="as";;
         .asm) sourcekind="as";;
@@ -1517,6 +1517,12 @@ _add_target_filepaths() {
     shift
     # we need avoid escape `*` automatically in for-loop
     string_replace "${@}" "\*" "?"; local list="${_ret}"
+    if test_eq "${key}" "files"; then
+        for file in ${list}; do
+            path_sourcekind "${file}"; local sourcekind="${_ret}"
+            _targets_toolkinds="${_targets_toolkinds} ${sourcekind}"
+        done
+    fi
     for file in ${list}; do
         string_replace "${file}" "?" "*"; file="${_ret}"
         if ! path_is_absolute "${file}"; then
@@ -1603,6 +1609,12 @@ set_kind() {
     fi
     local kind=${1}
     _set_target_item "${_xmake_sh_target_current}" "kind" "${kind}"
+    case "${kind}" in
+        binary) _targets_toolkinds="${_targets_toolkinds} ld";;
+        static) _targets_toolkinds="${_targets_toolkinds} ar";;
+        shared) _targets_toolkinds="${_targets_toolkinds} sh";;
+        *) raise "unknown target kind ${kind}";;
+    esac
 }
 
 # set version in target
@@ -1628,15 +1640,13 @@ set_default() {
 
 # set configvar in target
 set_configvar() {
+    if ! ${_loading_targets}; then
+        return
+    fi
     local name="${1}"
     local value="${2}"
-    if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
-        _set_target_item "${_xmake_sh_target_current}" "configvar_${name}" "${value}"
-        _add_target_item "${_xmake_sh_target_current}" "configvars" "${name}"
-    elif ${_loading_options} && test_nz "${_xmake_sh_option_current}"; then
-        _set_option_item "${_xmake_sh_option_current}" "configvar_${name}" "${value}"
-        _add_option_item "${_xmake_sh_option_current}" "configvars" "${name}"
-    fi
+    _set_target_item "${_xmake_sh_target_current}" "configvar_${name}" "${value}"
+    _add_target_item "${_xmake_sh_target_current}" "configvars" "${name}"
 }
 
 # set filename in target
@@ -3059,6 +3069,15 @@ _load_targets() {
 }
 _load_targets
 
+# get toolset kinds for all targets
+# e.g. cc cxx as mm mxx ld sh ar
+_get_targets_toolkinds() {
+    if test_z "${_targets_toolkinds_dedup}"; then
+        _dedup "${_targets_toolkinds}"; _targets_toolkinds_dedup="${_ret}"
+    fi
+    _ret="${_targets_toolkinds_dedup}"
+}
+
 #-----------------------------------------------------------------------------
 # generate configfiles
 #
@@ -3253,7 +3272,7 @@ _gmake_add_switches() {
 }
 
 _gmake_add_flags() {
-    local kinds="cc cxx as mm mxx ld sh ar"
+    _get_targets_toolkinds; local kinds="${_ret}"
     for target in ${_xmake_sh_targets}; do
         for kind in ${kinds}; do
             _get_target_flags "${target}" "${kind}"; local flags="${_ret}"
@@ -3266,7 +3285,7 @@ _gmake_add_flags() {
 }
 
 _gmake_add_toolchains() {
-    local kinds="cc cxx as mm mxx ld sh ar"
+    _get_targets_toolkinds; local kinds="${_ret}"
     for kind in ${kinds}; do
         _get_toolchain_toolset "${_target_toolchain}" "${kind}"; local program="${_ret}"
         string_toupper "${kind}"; local key="${_ret}"
