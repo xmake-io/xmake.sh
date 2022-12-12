@@ -1107,8 +1107,10 @@ _get_target_item() {
     local values="${_ret}"
     if _map_has "targets" "__root_${key}"; then
         _map_get "targets" "__root_${key}"; local root_values="${_ret}"
-        if test_nz "${root_values}"; then
+        if test_nz "${values}"; then
             values="${root_values} ${values}"
+        else
+            values="${root_values}"
         fi
     fi
     _ret="${values}"
@@ -3102,7 +3104,7 @@ _vprint_configvar_define() {
     elif test_eq "${value}" "1" || test_eq "${value}" "true"; then
         vprint "  > replace ${name} -> #define ${name} 1"
     elif test_eq "${value}" "0" || test_eq "${value}" "false"; then
-        vprint "  > replace ${name} -> #define ${name} 0"
+        vprint "  > replace ${name} -> /*#define ${name} 0*/"
     else
         vprint "  > replace ${name} -> #define ${name} ${value}"
     fi
