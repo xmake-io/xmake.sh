@@ -809,6 +809,9 @@ option() {
     local default=${3}
     _xmake_sh_option_current="${name}"
     if ! ${_loading_options}; then
+        if test_nz "${description}"; then
+            _xmake_sh_option_current=""
+        fi
         return
     fi
     _xmake_sh_options="${_xmake_sh_options} ${name}"
@@ -3622,9 +3625,9 @@ _generate_for_ninja() {
 #
 
 _generate_build_file() {
-    if test "x${_project_generator}" = "xgmake"; then
+    if test_eq "${_project_generator}" "gmake"; then
         _generate_for_gmake
-    elif test "x${_project_generator}" = "xninja"; then
+    elif test_eq "${_project_generator}" "ninja"; then
         _generate_for_ninja
     else
         raise "unknown generator: ${_project_generator}"
