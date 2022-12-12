@@ -348,6 +348,7 @@ _dedup() {
 _dedup_reverse() {
     local result=""
     local list=$(echo "${1}" | awk '{for (i = NF; i > 0; --i) if (!seen[$i]++) printf $i " "}')
+    local item=""
     for item in ${list}; do
         result="${item} ${result}"
     done
@@ -440,6 +441,7 @@ _map_remove() {
         eval _map_${name}_value_${key}=""
         local keys=$(eval echo \$_map_${name}_keys)
         local keys_new=""
+        local k=""
         for k in ${keys}; do
             if test_nq "${k}" "${key}"; then
                 keys_new="${keys_new} ${k}"
@@ -490,8 +492,9 @@ fi
 #     ...
 # fi
 is_host() {
+    local host=""
     for host in $@; do
-        if test "x${os_host}" = "x${host}"; then
+        if test_eq "${os_host}" "${host}"; then
             return 0
         fi
     done
@@ -540,8 +543,9 @@ _install_includedir_default="include"
 #     ...
 # fi
 is_plat() {
+    local plat=""
     for plat in $@; do
-        if test "x${_target_plat}" = "x${plat}"; then
+        if test_eq "${_target_plat}" "${plat}"; then
             return 0
         fi
     done
@@ -554,8 +558,9 @@ is_plat() {
 #     ...
 # fi
 is_arch() {
+    local arch=""
     for arch in $@; do
-        if test "x${_target_arch}" = "x${arch}"; then
+        if test_eq "${_target_arch}" "${arch}"; then
             return 0
         fi
     done
@@ -568,8 +573,9 @@ is_arch() {
 #     ...
 # fi
 is_mode() {
+    local mode=""
     for mode in $@; do
-        if test "x${_target_mode}" = "x${mode}"; then
+        if test_eq "${_target_mode}" "${mode}"; then
             return 0
         fi
     done
@@ -582,8 +588,9 @@ is_mode() {
 #     ...
 # fi
 is_toolchain() {
+    local toolchain=""
     for toolchain in $@; do
-        if test "x${_target_toolchain}" = "x${toolchain}"; then
+        if test_eq "${_target_toolchain}" "${toolchain}"; then
             return 0
         fi
     done
@@ -602,6 +609,7 @@ set_project() {
 # include the given xmake.sh file or directory
 # e.g. includes "src" "tests"
 includes() {
+    local path=""
     for path in $@; do
         if test -f "${path}"; then
             xmake_sh_scriptdir=$(dirname -- "${path}")
@@ -773,6 +781,7 @@ _get_abstract_flags() {
     local itemname="${3}"
     local values="${4}"
     local flags=""
+    local value=""
     for value in ${values}; do
         local flag=""
         case "${toolname}" in
@@ -905,6 +914,7 @@ _option_need_checking() {
 # get options for the help menu
 _get_options_for_menu() {
     local options=""
+    local name=""
     for name in ${_xmake_sh_options}; do
         _get_option_item "${name}" "showmenu"; local showmenu="${_ret}"
         if _is_enabled "${showmenu}"; then
@@ -919,6 +929,7 @@ _get_options_for_menu() {
 # get options for checking
 _get_options_for_checking() {
     local options=""
+    local name=""
     for name in ${_xmake_sh_options}; do
         _get_option_item "${name}" "showmenu"; local showmenu="${_ret}"
         if test_z "${showmenu}" && _option_need_checking "${name}"; then
@@ -1289,6 +1300,7 @@ _get_target_objectfiles() {
     local name="${1}"
     _get_target_sourcefiles "${name}"; local sourcefiles="${_ret}"
     local objectfiles=""
+    local sourcefile=""
     for sourcefile in ${sourcefiles}; do
         _get_target_objectfile "${name}" "${sourcefile}"; local objectfile="${_ret}"
         objectfiles="${objectfiles} ${objectfile}"
@@ -1310,6 +1322,7 @@ _get_target_abstract_flags() {
 
         # get values from target deps
         _get_target_item "${name}" "deps"; local deps="${_ret}"
+        local dep=""
         for dep in ${deps}; do
             _get_target_item "${dep}" "kind"; local dep_kind="${_ret}"
             if test_eq "${dep_kind}" "static" || test_eq "${dep_kind}" "shared"; then
@@ -1385,6 +1398,7 @@ _get_target_compiler_flags() {
 
     # get abstract flags
     local itemnames="symbols optimizes warnings languages defines undefines includedirs frameworkdirs frameworks"
+    local itemname=""
     for itemname in ${itemnames}; do
         _get_target_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}"; local flags="${_ret}"
         if test_nz "${flags}"; then
@@ -1428,6 +1442,7 @@ _get_target_linker_flags() {
 
     # get flags from target deps
     _get_target_item "${name}" "deps"; local deps="${_ret}"
+    local dep=""
     for dep in ${deps}; do
         _get_target_item "${dep}" "kind"; local dep_kind="${_ret}"
         if test_eq "${dep_kind}" "static" || test_eq "${dep_kind}" "shared"; then
@@ -1451,6 +1466,7 @@ _get_target_linker_flags() {
 
     # get abstract flags
     local itemnames="strip frameworkdirs linkdirs links rpathdirs frameworks syslinks"
+    local itemname=""
     for itemname in ${itemnames}; do
         _get_target_abstract_flags "${name}" "${toolkind}" "${toolname}" "${itemname}"; local flags="${_ret}"
         if test_nz "${flags}"; then
@@ -1514,6 +1530,7 @@ _add_target_filepaths() {
     local key="$1"
     shift
     # we need avoid escape `*` automatically in for-loop
+    local file=""
     string_replace "${@}" "\*" "?"; local list="${_ret}"
     if test_eq "${key}" "files"; then
         for file in ${list}; do
@@ -1720,6 +1737,7 @@ add_deps() {
     if ! ${_loading_targets}; then
         return
     fi
+    local dep=""
     for dep in $@; do
         _add_target_item "${_xmake_sh_target_current}" "deps" "${dep}"
     done
@@ -1759,6 +1777,7 @@ add_configfiles() {
 
 # add defines in target
 add_defines() {
+    local define=""
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         local public=false
         for define in $@; do
@@ -1784,6 +1803,7 @@ add_defines() {
 
 # add udefines in target
 add_udefines() {
+    local undefine=""
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         local public=false
         for undefine in $@; do
@@ -1810,6 +1830,7 @@ add_udefines() {
 # add includedirs in target
 add_includedirs() {
     local public=false
+    local dir=""
     for dir in $@; do
         if test_nq "${dir}" "{public}"; then
             if ! path_is_absolute "${dir}"; then
@@ -1842,6 +1863,7 @@ add_includedirs() {
 
 # add links in target
 add_links() {
+    local link=""
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         local public=false
         for link in $@; do
@@ -1867,6 +1889,7 @@ add_links() {
 
 # add syslinks in target
 add_syslinks() {
+    local syslink=""
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         local public=false
         for syslink in $@; do
@@ -1892,6 +1915,7 @@ add_syslinks() {
 
 # add linkdirs in target
 add_linkdirs() {
+    local dir=""
     local public=false
     for dir in $@; do
         if test_nq "${dir}" "{public}"; then
@@ -1928,6 +1952,7 @@ add_rpathdirs() {
     if ! ${_loading_targets}; then
         return
     fi
+    local dir=""
     for dir in $@; do
         if ! path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
@@ -1939,6 +1964,7 @@ add_rpathdirs() {
 
 # add frameworks in target
 add_frameworks() {
+    local framework=""
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         local public=false
         for framework in $@; do
@@ -1964,6 +1990,7 @@ add_frameworks() {
 
 # add frameworkdirs in target
 add_frameworkdirs() {
+    local dir=""
     for dir in $@; do
         if ! path_is_absolute "${dir}"; then
             dir="${xmake_sh_scriptdir}/${dir}"
@@ -2027,6 +2054,7 @@ set_optimizes() {
 
 # add cflags in target
 add_cflags() {
+    local flag=""
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cflags" "${flag}"
@@ -2040,6 +2068,7 @@ add_cflags() {
 
 # add cxflags in target
 add_cxflags() {
+    local flag=""
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cxflags" "${flag}"
@@ -2053,6 +2082,7 @@ add_cxflags() {
 
 # add cxxflags in target
 add_cxxflags() {
+    local flag=""
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         for flag in $@; do
             _add_target_item "${_xmake_sh_target_current}" "cxxflags" "${flag}"
@@ -2069,6 +2099,7 @@ add_asflags() {
     if ! ${_loading_targets}; then
         return
     fi
+    local flag=""
     for flag in $@; do
         _add_target_item "${_xmake_sh_target_current}" "asflags" "${flag}"
     done
@@ -2079,6 +2110,7 @@ add_mflags() {
     if ! ${_loading_targets}; then
         return
     fi
+    local flag=""
     for flag in $@; do
         _add_target_item "${_xmake_sh_target_current}" "mflags" "${flag}"
     done
@@ -2089,6 +2121,7 @@ add_mxflags() {
     if ! ${_loading_targets}; then
         return
     fi
+    local flag=""
     for flag in $@; do
         _add_target_item "${_xmake_sh_target_current}" "mxflags" "${flag}"
     done
@@ -2099,6 +2132,7 @@ add_mxxflags() {
     if ! ${_loading_targets}; then
         return
     fi
+    local flag=""
     for flag in $@; do
         _add_target_item "${_xmake_sh_target_current}" "mxxflags" "${flag}"
     done
@@ -2109,6 +2143,7 @@ add_ldflags() {
     if ! ${_loading_targets}; then
         return
     fi
+    local flag=""
     for flag in $@; do
         _add_target_item "${_xmake_sh_target_current}" "ldflags" "${flag}"
     done
@@ -2119,6 +2154,7 @@ add_shflags() {
     if ! ${_loading_targets}; then
         return
     fi
+    local flag=""
     for flag in $@; do
         _add_target_item "${_xmake_sh_target_current}" "shflags" "${flag}"
     done
@@ -2129,6 +2165,7 @@ add_arflags() {
     if ! ${_loading_targets}; then
         return
     fi
+    local flag=""
     for flag in $@; do
         _add_target_item "${_xmake_sh_target_current}" "arflags" "${flag}"
     done
