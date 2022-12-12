@@ -1292,27 +1292,6 @@ _get_target_objectfiles() {
     _ret="${objectfiles}"
 }
 
-# get values from target
-_get_target_values() {
-    local name="${1}"
-    local itemname="${2}"
-
-    # get values from target
-    _get_target_item "${name}" "${itemname}"; local values="${_ret}"
-
-    # get values from options in target
-    _get_target_item "${name}" "options"; local options="${_ret}"
-    for option in ${options}; do
-        if has_config "${option}"; then
-            _get_option_item "${option}" "${itemname}"; local option_values="${_ret}"
-            if test_nz "${option_values}"; then
-                values="${values} ${option_values}"
-            fi
-        fi
-    done
-    _ret="${values}"
-}
-
 # get abstract flags in target
 _get_target_abstract_flags() {
     local name="${1}"
@@ -1323,14 +1302,14 @@ _get_target_abstract_flags() {
     if test_z "${values}"; then
 
         # get values from target
-        _get_target_values "${name}" "${itemname}"; values="${_ret}"
+        _get_target_item "${name}" "${itemname}"; values="${_ret}"
 
         # get values from target deps
         _get_target_item "${name}" "deps"; local deps="${_ret}"
         for dep in ${deps}; do
             _get_target_item "${dep}" "kind"; local dep_kind="${_ret}"
             if test_eq "${dep_kind}" "static" || test_eq "${dep_kind}" "shared"; then
-                _get_target_values "${dep}" "${itemname}_public"; local depvalues="${_ret}"
+                _get_target_item "${dep}" "${itemname}_public"; local depvalues="${_ret}"
                 if test_nz "${depvalues}"; then
                     values="${values} ${depvalues}"
                 fi
@@ -1411,17 +1390,17 @@ _get_target_compiler_flags() {
 
     # get raw flags, e.g. add_cflags, add_cxxflags
     _get_flagname "${toolkind}"; local flagname="${_ret}"
-    _get_target_values "${name}" "${flagname}"; local flags="${_ret}"
+    _get_target_item "${name}" "${flagname}"; local flags="${_ret}"
     if test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
     if test_eq "${flagname}" "cflags" || test_eq "${flagname}" "cxxflags"; then
-        _get_target_values "${name}" "cxflags"; flags="${_ret}"
+        _get_target_item "${name}" "cxflags"; flags="${_ret}"
         if test_nz "${flags}"; then
             result="${result} ${flags}"
         fi
     elif test_eq "${flagname}" "mflags" || test_eq "${flagname}" "mxxflags"; then
-        _get_target_values "${name}" "mxflags"; flags="${_ret}"
+        _get_target_item "${name}" "mxflags"; flags="${_ret}"
         if test_nz "${flags}"; then
             result="${result} ${flags}"
         fi
@@ -1477,7 +1456,7 @@ _get_target_linker_flags() {
 
     # get raw flags, e.g. add_ldflags, add_shflags
     _get_flagname "${toolkind}"; local flagname="${_ret}"
-    _get_target_values "${name}" "${flagname}"; local flags="${_ret}"
+    _get_target_item "${name}" "${flagname}"; local flags="${_ret}"
     if test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
@@ -1735,16 +1714,6 @@ add_deps() {
     fi
     for dep in $@; do
         _add_target_item "${_xmake_sh_target_current}" "deps" "${dep}"
-    done
-}
-
-# add options in target
-add_options() {
-    if ! ${_loading_targets}; then
-        return
-    fi
-    for option in $@; do
-        _add_target_item "${_xmake_sh_target_current}" "options" "${option}"
     done
 }
 
@@ -3243,22 +3212,6 @@ _generate_configfile() {
         _vprint_configvar_value "${content}" "${name}" "${value}"
         _replace_configvar_define "${content}" "${name}" "${value}"; content="${_ret}"
         _replace_configvar_value "${content}" "${name}" "${value}"; content="${_ret}"
-    done
-
-    # replace configvars in target/options
-    _get_target_item "${target}" "options"; local options="${_ret}"
-    for option in ${options}; do
-        _get_option_item "${option}" "configvars"; local configvars="${_ret}"
-        for name in ${configvars}; do
-            _get_option_item "${option}" "configvar_${name}"; local value="${_ret}"
-            if ! has_config "${option}"; then
-                value=""
-            fi
-            _vprint_configvar_define "${content}" "${name}" "${value}"
-            _vprint_configvar_value "${content}" "${name}" "${value}"
-            _replace_configvar_define "${content}" "${name}" "${value}"; content="${_ret}"
-            _replace_configvar_value "${content}" "${name}" "${value}"; content="${_ret}"
-        done
     done
 
     # done

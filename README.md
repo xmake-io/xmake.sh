@@ -103,15 +103,11 @@ option "pthread"
     add_links "pthread"
     add_cincludes "pthread.h"
     add_cfuncs "pthread_create"
-    add_defines "HAS_PTHREAD"
-    set_configvar "HAS_PTHREAD" 1
 option_end
 
 option "cxx_constexpr"
     set_languages "c++11"
     add_cxxsnippets "constexpr int k = 0;"
-    add_defines "HAS_CONSTEXPR"
-    set_configvar "HAS_CONSTEXPR" 1
 option_end
 
 set_warnings "all" "error"
@@ -125,23 +121,11 @@ else
     set_optimizes "smallest"
 fi
 
-target "foo"
-    set_kind "static"
-    add_files "*.cpp"
-    add_defines "FOO" "{public}"
-    add_includedirs "." "{public}"
-
-target "bar"
-    set_kind "shared"
-    add_files "*.cpp"
-    add_defines "BAR=\"bar\""
-
 target "demo"
     set_kind "binary"
     add_deps "foo" "bar"
     add_files "*.cpp"
     add_includedirs "foo" "bar"
-    add_options "pthread" "cxx_constexpr"
     add_configfiles "config.h.in"
     set_configdir "${buildir}/include"
     add_headerfiles "${buildir}/include/config.h" "hello"
@@ -153,6 +137,12 @@ target "demo"
     fi
     if is_plat "linux" "macosx"; then
         add_defines "POSIX"
+    fi
+    if has_config "pthread"; then
+        set_configvar "HAS_PTHREAD" 1
+    fi
+    if has_config "cxx_constexpr"; then
+        set_configvar "HAS_CONSTEXPR" 1
     fi
 
 includes "foo" "bar"
@@ -236,7 +226,6 @@ $ make run
   - [x] set_installdir
   - [x] add_installfiles
   - [x] add_headerfiles
-  - [x] add_options
 - [x] target_end
 - [x] option
   - [x] set_default
