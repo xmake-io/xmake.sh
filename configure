@@ -3130,9 +3130,8 @@ _get_targets_toolkinds() {
 
 # vprint config variable in `${name}`
 _vprint_configvar_value() {
-    local content="${1}"
-    local name="${2}"
-    local value="${3}"
+    local name="${1}"
+    local value="${2}"
     vprint "  > replace ${name} -> ${value}"
 }
 
@@ -3264,6 +3263,10 @@ _generate_configfile() {
     fi
 
     # replace configvars in target
+    local count=0
+    local configfile_dst="${configfile}"
+    _os_tmpfile; local tmpfile="${_ret}"
+    cp "${configfile_in}" "${tmpfile}"
     _get_target_item "${target}" "configvars"; local configvars="${_ret}"
     for name in ${configvars}; do
         _get_target_item "${target}" "configvar_${name}"; local value="${_ret}"
@@ -3271,11 +3274,25 @@ _generate_configfile() {
         _vprint_configvar_value "${name}" "${value}"
         _replace_configvar_define "${name}" "${value}"; patterns="${_ret};${patterns}"
         _replace_configvar_value "${name}" "${value}"; patterns="${_ret};${patterns}"
+        count=$((count + 1))
+        if test_eq "$count" "10"; then
+            _io_replace_file "${tmpfile}" "${configfile}" "${patterns}"
+            local swapfile="${tmpfile}"
+            tmpfile="${configfile}"
+            configfile="${swapfile}"
+            patterns=""
+            count=0
+        fi
     done
 
     # do replace
-    _io_replace_file "${configfile_in}" "${configfile}" "${patterns}"
-    echo "${configfile} is generated!"
+    if test_nz "${patterns}"; then
+        _io_replace_file "${tmpfile}" "${configfile}" "${patterns}"
+    fi
+    if test_nq "${configfile}" "${configfile_dst}"; then
+        cp "${configfile}" "${configfile_dst}"
+    fi
+    echo "${configfile_dst} is generated!"
 }
 
 # generate configfiles
