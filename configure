@@ -1107,7 +1107,9 @@ _get_target_item() {
     local values="${_ret}"
     if _map_has "targets" "__root_${key}"; then
         _map_get "targets" "__root_${key}"; local root_values="${_ret}"
-        values="${root_values} ${values}"
+        if test_nz "${root_values}"; then
+            values="${root_values} ${values}"
+        fi
     fi
     _ret="${values}"
 }
@@ -1134,7 +1136,7 @@ _add_target_item() {
         values="${values} ${value}"
         _map_set "targets" "${name}_${key}" "${values}"
     else
-        _map_get "targets" "__root_${key}"; local values="${ret}"
+        _map_get "targets" "__root_${key}"; local values="${_ret}"
         values="${values} ${value}"
         _map_set "targets" "__root_${key}" "${values}"
     fi
