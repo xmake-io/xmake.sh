@@ -47,13 +47,9 @@ target "demo"
     fi
     if has_config "pthread"; then
         set_configvar "HAS_PTHREAD" 1
-    else
-        set_configvar "HAS_PTHREAD" 0
     fi
     if has_config "cxx_constexpr"; then
         set_configvar "HAS_CONSTEXPR" 1
-    else
-        set_configvar "HAS_CONSTEXPR" 0
     fi
 
 includes "foo" "bar"
