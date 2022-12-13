@@ -186,6 +186,7 @@ $ make run
 - [x] is_mode
 - [x] is_config
 - [x] has_config
+- [x] set_config
 - [x] target
   - [x] set_kind
   - [x] add_deps
