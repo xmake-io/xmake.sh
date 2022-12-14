@@ -597,6 +597,9 @@ is_host() {
 
 # detect host architecture
 os_arch=`uname -m | tr '[A-Z]' '[a-z]'`
+if test_eq "${os_arch}" "i686"; then
+    os_arch="i386"
+fi
 
 # set the default target platform and architecture
 _target_plat_default=${os_host}
@@ -1444,6 +1447,9 @@ _get_target_toolchain_flags_for_gcc() {
     local name="${1}"
     local toolkind="${2}"
     local flags=""
+    if is_arch "i386"; then
+        flags="-m32"
+    fi
     _get_target_item "${name}" "kind"; local targetkind="${_ret}"
     if test_eq "${targetkind}" "shared" && test_eq "${toolkind}" "sh"; then
         flags="-shared -fPIC"
@@ -1456,6 +1462,9 @@ _get_target_toolchain_flags_for_clang() {
     local name="${1}"
     local toolkind="${2}"
     local flags="-Qunused-arguments"
+    if is_arch "i386"; then
+        flags="-m32"
+    fi
     _get_target_item "${name}" "kind"; local targetkind="${_ret}"
     if test_eq "${targetkind}" "shared" && test_eq "${toolkind}" "sh"; then
         flags="-shared -fPIC"
@@ -2657,7 +2666,6 @@ _toolchain_linkcmd() {
     local flags="${4}"
     _get_toolchain_toolset "${_target_toolchain}" "${toolkind}"; local program="${_ret}"
     path_toolname "${program}"; local toolname="${_ret}"
-    local linkcmd=""
     case "${toolname}" in
         gcc) _toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}"; linkcmd="${_ret}";;
         gxx) _toolchain_linkcmd_for_gcc_clang "${toolkind}" "${program}" "${binaryfile}" "${objectfiles}" "${flags}"; linkcmd="${_ret}";;
