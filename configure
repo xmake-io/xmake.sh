@@ -1592,6 +1592,18 @@ _get_target_compiler_flags() {
     # get raw flags, e.g. add_cflags, add_cxxflags
     _get_flagname "${toolkind}"; local flagname="${_ret}"
     _get_target_item "${name}" "${flagname}"; local flags="${_ret}"
+    # get flags from target deps
+    _get_target_librarydeps "${name}"; local deps="${_ret}"
+    local dep=""
+    for dep in ${deps}; do
+        _get_target_item "${dep}" "kind"; local dep_kind="${_ret}"
+        if test_eq "${dep_kind}" "static" || test_eq "${dep_kind}" "shared"; then
+            _get_target_item "${dep}" "${flagname}_public"; local depflags="${_ret}"
+            if test_nz "${depflags}"; then
+                flags="${flags} ${depflags}"
+            fi
+        fi
+    done
     if test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
@@ -1660,6 +1672,16 @@ _get_target_linker_flags() {
     # get raw flags, e.g. add_ldflags, add_shflags
     _get_flagname "${toolkind}"; local flagname="${_ret}"
     _get_target_item "${name}" "${flagname}"; local flags="${_ret}"
+    # get flags from target deps
+    for dep in ${deps}; do
+        _get_target_item "${dep}" "kind"; local dep_kind="${_ret}"
+        if test_eq "${dep_kind}" "static" || test_eq "${dep_kind}" "shared"; then
+            _get_target_item "${dep}" "${flagname}_public"; local depflags="${_ret}"
+            if test_nz "${depflags}"; then
+                flags="${flags} ${depflags}"
+            fi
+        fi
+    done
     if test_nz "${flags}"; then
         result="${result} ${flags}"
     fi
@@ -2319,6 +2341,13 @@ add_options() {
         return
     fi
     local name=""
+    local public=false
+    for name in $@; do
+        if test_nq "${name}" "{public}"; then
+            public=true
+            break
+        fi
+    done
     for name in $@; do
         if has_config "${name}"; then
             local itemname=""
@@ -2327,6 +2356,9 @@ add_options() {
                 _get_option_item "${name}" "${itemname}"; local values="${_ret}"
                 if test_nz "${values}"; then
                     _add_target_item "${_xmake_sh_target_current}" "${itemname}" "${values}"
+                    if $public; then
+                        _add_target_item "${_xmake_sh_target_current}" "${itemname}_public" "${values}"
+                    fi
                 fi
             done
         fi
