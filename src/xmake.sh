@@ -52,6 +52,7 @@ target "demo"
     add_headerfiles "(bar/*.h)" "hello"
     add_headerfiles "foo/(*.h)" "hello"
     add_installfiles "res/(png/**.png)" "share"
+    add_options "lua"
     if has_config "debug"; then
         add_defines "DEBUG" "TEST"
     fi

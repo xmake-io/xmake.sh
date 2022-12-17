@@ -2371,6 +2371,26 @@ add_arflags() {
     done
 }
 
+# add options in target
+add_options() {
+    if ! ${_loading_targets}; then
+        return
+    fi
+    local name=""
+    for name in $@; do
+        if has_config "${name}"; then
+            local itemname=""
+            local itemnames="includedirs linkdirs links"
+            for itemname in ${itemnames}; do
+                _get_option_item "${name}" "${itemname}"; local values="${_ret}"
+                if test_nz "${values}"; then
+                    _add_target_item "${_xmake_sh_target_current}" "${itemname}" "${values}"
+                fi
+            done
+        fi
+    done
+}
+
 #-----------------------------------------------------------------------------
 # toolchain configuration apis
 #

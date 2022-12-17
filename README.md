@@ -227,6 +227,7 @@ $ make run
   - [x] set_installdir
   - [x] add_installfiles
   - [x] add_headerfiles
+  - [x] add_options
 - [x] target_end
 - [x] option
   - [x] set_default
