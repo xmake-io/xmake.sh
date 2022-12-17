@@ -17,6 +17,15 @@ option "cxx_constexpr"
     add_cxxsnippets "constexpr int k = 0;"
 option_end
 
+option "lua"
+    add_cfuncs "lua_pushstring"
+    add_cincludes "lua.h"
+    add_cincludes "lualib.h"
+    add_cincludes "lauxlib.h"
+    add_links "lua5.4"
+    add_includedirs "/usr/include/lua5.4"
+option_end
+
 set_warnings "all" "error"
 set_languages "c99" "c++11"
 if is_mode "debug"; then

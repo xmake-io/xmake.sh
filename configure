@@ -3140,7 +3140,7 @@ _check_cxsnippets() {
         local compflags=""
         _get_toolchain_toolset "${_target_toolchain}" "${sourcekind}"; local program="${_ret}"
         path_toolname "${program}"; local toolname="${_ret}"
-        local itemnames="languages warnings optimizes defines undefines"
+        local itemnames="languages warnings optimizes defines undefines includedirs"
         for itemname in ${itemnames}; do
             _get_option_abstract_flags "${name}" "${sourcekind}" "${toolname}" "${itemname}"; local flags="${_ret}"
             if test_nz "${flags}"; then
