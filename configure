@@ -1212,6 +1212,15 @@ add_cxxsnippets() {
     _add_option_item "${_xmake_sh_option_current}" "cxxsnippets" "${cxxsnippets}"
 }
 
+# before_check in option
+before_check() {
+    if ! ${_loading_options}; then
+        return
+    fi
+    local funcname="${1}"
+    _add_option_item "${_xmake_sh_option_current}" "before_check" "${funcname}"
+}
+
 #-----------------------------------------------------------------------------
 # target configuration apis
 #
@@ -2019,7 +2028,9 @@ add_includedirs() {
             if ! path_is_absolute "${dir}"; then
                 dir="${xmake_sh_scriptdir}/${dir}"
             fi
-            path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
+            if string_startswith "${dir}" "${xmake_sh_projectdir}"; then
+                path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
+            fi
             if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
                 _add_target_item "${_xmake_sh_target_current}" "includedirs" "${dir}"
             elif ${_loading_options} && test_nz "${_xmake_sh_option_current}"; then
@@ -2035,7 +2046,9 @@ add_includedirs() {
                 if ! path_is_absolute "${dir}"; then
                     dir="${xmake_sh_scriptdir}/${dir}"
                 fi
-                path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
+                if string_startswith "${dir}" "${xmake_sh_projectdir}"; then
+                    path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
+                fi
                 if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
                     _add_target_item "${_xmake_sh_target_current}" "includedirs_public" "${dir}"
                 fi
@@ -2105,7 +2118,9 @@ add_linkdirs() {
             if ! path_is_absolute "${dir}"; then
                 dir="${xmake_sh_scriptdir}/${dir}"
             fi
-            path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
+            if string_startswith "${dir}" "${xmake_sh_projectdir}"; then
+                path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
+            fi
             if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
                 _add_target_item "${_xmake_sh_target_current}" "linkdirs" "${dir}"
             elif ${_loading_options} && test_nz "${_xmake_sh_option_current}"; then
@@ -2121,7 +2136,9 @@ add_linkdirs() {
                 if ! path_is_absolute "${dir}"; then
                     dir="${xmake_sh_scriptdir}/${dir}"
                 fi
-                path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
+                if string_startswith "${dir}" "${xmake_sh_projectdir}"; then
+                    path_relative ${xmake_sh_projectdir} "${dir}"; dir="${_ret}"
+                fi
                 if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
                     _add_target_item "${_xmake_sh_target_current}" "linkdirs_public" "${dir}"
                 fi
@@ -3253,6 +3270,10 @@ _check_cxxsnippets() {
 # check option
 _check_option() {
     local name="${1}"
+    _get_option_item "${name}" "before_check"; local before_check="${_ret}"
+    if test_nz "${before_check}"; then
+        eval ${before_check}
+    fi
     if _check_csnippets "${name}" && _check_cxxsnippets "${name}"; then
         return 0
     fi
