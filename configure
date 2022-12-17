@@ -1155,8 +1155,10 @@ add_cincludes() {
     if ! ${_loading_options}; then
         return
     fi
-    local cincludes="${1}"
-    _add_option_item "${_xmake_sh_option_current}" "cincludes" "${cincludes}"
+    local cinclude=""
+    for cinclude in $@; do
+        _add_option_item "${_xmake_sh_option_current}" "cincludes" "${cinclude}"
+    done
 }
 
 # add cxxincludes in option
@@ -1164,8 +1166,10 @@ add_cxxincludes() {
     if ! ${_loading_options}; then
         return
     fi
-    local cxxincludes="${1}"
-    _add_option_item "${_xmake_sh_option_current}" "cxxincludes" "${cxxincludes}"
+    local cxxinclude=""
+    for cxxinclude in $@; do
+        _add_option_item "${_xmake_sh_option_current}" "cxxincludes" "${cxxinclude}"
+    done
 }
 
 # add ctypes in option
@@ -1173,8 +1177,10 @@ add_ctypes() {
     if ! ${_loading_options}; then
         return
     fi
-    local ctypes="${1}"
-    _add_option_item "${_xmake_sh_option_current}" "ctypes" "${ctypes}"
+    local ctype=""
+    for ctype in $@; do
+        _add_option_item "${_xmake_sh_option_current}" "ctypes" "${ctype}"
+    done
 }
 
 # add cxxtypes in option
@@ -1182,8 +1188,10 @@ add_cxxtypes() {
     if ! ${_loading_options}; then
         return
     fi
-    local cxxtypes="${1}"
-    _add_option_item "${_xmake_sh_option_current}" "cxxtypes" "${cxxtypes}"
+    local cxxtype=""
+    for cxxtype in $@; do
+        _add_option_item "${_xmake_sh_option_current}" "cxxtypes" "${cxxtype}"
+    done
 }
 
 # add csnippets in option

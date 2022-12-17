@@ -19,9 +19,7 @@ option_end
 
 option "lua"
     add_cfuncs "lua_pushstring"
-    add_cincludes "lua.h"
-    add_cincludes "lualib.h"
-    add_cincludes "lauxlib.h"
+    add_cincludes "lua.h" "lualib.h" "lauxlib.h"
     add_links "lua5.4"
     add_includedirs "/usr/include/lua5.4"
 option_end
