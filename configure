@@ -2290,10 +2290,11 @@ add_mxxflags() {
 
 # add ldflags in target
 add_ldflags() {
-    if ! ${_loading_targets}; then
-        return
+    if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
+        _add_target_item "${_xmake_sh_target_current}" "ldflags" "${@}"
+    elif ${_loading_options} && test_nz "${_xmake_sh_option_current}"; then
+        _add_option_item "${_xmake_sh_option_current}" "ldflags" "${@}"
     fi
-    _add_target_item "${_xmake_sh_target_current}" "ldflags" "${@}"
 }
 
 # add shflags in target
@@ -2321,7 +2322,7 @@ add_options() {
     for name in $@; do
         if has_config "${name}"; then
             local itemname=""
-            local itemnames="includedirs linkdirs links"
+            local itemnames="includedirs linkdirs links cflags cxflags cxxflags ldflags"
             for itemname in ${itemnames}; do
                 _get_option_item "${name}" "${itemname}"; local values="${_ret}"
                 if test_nz "${values}"; then
@@ -3090,14 +3091,9 @@ _check_cxsnippets() {
     _get_option_item "${name}" "${kind}includes"; local includes="${_ret}"
     _get_option_item "${name}" "${kind}types"; local types="${_ret}"
     _get_option_item "${name}" "${kind}snippets"; local snippets="${_ret}"
-    _get_option_item "${name}" "links"; local links="${_ret}"
-    _get_option_item "${name}" "syslinks"; local syslinks="${_ret}"
     if test_z "${funcs}" && test_z "${includes}" &&
        test_z "${types}" && test_z "${snippets}"; then
         return 0
-    fi
-    if test_nz "${syslinks}"; then
-        links="${links} ${syslinks}"
     fi
 
     # get c/c++ extension
@@ -3156,7 +3152,13 @@ _check_cxsnippets() {
     fi
 
     # try linking it
-    if ${ok} && test_nz "${links}"; then
+    _get_option_item "${name}" "links"; local links="${_ret}"
+    _get_option_item "${name}" "syslinks"; local syslinks="${_ret}"
+    _get_option_item "${name}" "ldflags"; local ldflags="${_ret}"
+    if test_nz "${syslinks}"; then
+        links="${links} ${syslinks}"
+    fi
+    if ${ok} && (test_nz "${links}" || test_nz "${ldflags}"); then
         local toolkind="ld"
         _get_toolchain_toolset "${_target_toolchain}" "${toolkind}"; local program="${_ret}"
         path_toolname "${program}"; local toolname="${_ret}"
