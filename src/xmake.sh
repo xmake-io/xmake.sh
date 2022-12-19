@@ -25,8 +25,8 @@ option_end
 
 option_find_lua() {
     option "lua"
-        add_cxflags `pkg-config --cflags lua5.4`
-        add_ldflags `pkg-config --libs lua5.4`
+        add_cxflags `pkg-config --cflags lua5.4 2>/dev/null`
+        add_ldflags `pkg-config --libs lua5.4 2>/dev/null`
     option_end
 }
 
