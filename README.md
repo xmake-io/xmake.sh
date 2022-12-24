@@ -7,10 +7,10 @@
 
   <div>
     <a href="https://github.com/xmake-io/xmake.sh/actions?query=workflow%3ALinux">
-      <img src="https://img.shields.io/github/workflow/status/xmake-io/xmake.sh/Linux/master.svg?style=flat-square&logo=linux" alt="github-ci" />
+      <img src="https://img.shields.io/github/actions/workflow/status/xmake-io/xmake.sh/linux.yml?branch=master&style=flat-square&logo=linux" alt="github-ci" />
     </a>
     <a href="https://github.com/xmake-io/xmake.sh/actions?query=workflow%3AmacOS">
-      <img src="https://img.shields.io/github/workflow/status/xmake-io/xmake.sh/macOS/master.svg?style=flat-square&logo=apple" alt="github-ci" />
+      <img src="https://img.shields.io/github/workflow/status/xmake-io/xmake.sh/macos.yml?branch=master&style=flat-square&logo=apple" alt="github-ci" />
     </a>
     <a href="https://github.com/xmake-io/xmake.sh/releases">
       <img src="https://img.shields.io/github/release/xmake-io/xmake.sh.svg?style=flat-square" alt="Github All Releases" />
