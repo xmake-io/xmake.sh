@@ -778,7 +778,10 @@ _get_abstract_flag_for_gcc_clang() {
         frameworks) flag="-framework ${value}";;
         frameworkdirs) flag="-F${value}";;
         rpathdirs)
-            if test_eq "${toolname}" "gcc" || test_eq "${toolname}" "gxx"; then
+            if is_plat "macosx"; then
+                string_replace "${value}" "\$ORIGIN" "@loader_path"; value="${_ret}"
+                flag="-Xlinker -rpath -Xlinker ${value}"
+            else
                 # escape $ORIGIN in makefile, TODO we need also handle it for ninja
                 string_replace "${value}" "@loader_path" '$$ORIGIN'; value="${_ret}"
                 if is_plat "bsd"; then
@@ -786,9 +789,6 @@ _get_abstract_flag_for_gcc_clang() {
                 else
                     flag="-Wl,-rpath='${value}'"
                 fi
-            elif test_eq "${toolname}" "clang" || test_eq "${toolname}" "clangxx"; then
-                string_replace "${value}" "\$ORIGIN" "@loader_path"; value="${_ret}"
-                flag="-Xlinker -rpath -Xlinker ${value}"
             fi
             ;;
         symbols)
