@@ -26,7 +26,7 @@ jobs:
           args: >
             bash -c
             "uname -a &&
-            apt update &&
+            apt update && apt install -y git build-essential &&
             cd /github/workspace &&
             ./configure &&
             make && make run"
