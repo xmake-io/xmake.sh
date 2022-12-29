@@ -781,7 +781,11 @@ _get_abstract_flag_for_gcc_clang() {
             if test_eq "${toolname}" "gcc" || test_eq "${toolname}" "gxx"; then
                 # escape $ORIGIN in makefile, TODO we need also handle it for ninja
                 string_replace "${value}" "@loader_path" '$$ORIGIN'; value="${_ret}"
-                flag="-Wl,-rpath='${value}'"
+                if is_plat "bsd"; then
+                    flag="-Wl,-zorigin -Wl,-rpath='${value}'"
+                else
+                    flag="-Wl,-rpath='${value}'"
+                fi
             elif test_eq "${toolname}" "clang" || test_eq "${toolname}" "clangxx"; then
                 string_replace "${value}" "\$ORIGIN" "@loader_path"; value="${_ret}"
                 flag="-Xlinker -rpath -Xlinker ${value}"
