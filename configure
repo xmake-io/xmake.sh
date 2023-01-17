@@ -3297,6 +3297,15 @@ _check_cxsnippets() {
                 compflags="${compflags} ${flags}"
             fi
         done
+        if test_eq "${sourcekind}" "cxx"; then
+            if test_nz "${CXXFLAGS}"; then
+                compflags="${compflags} ${CXXFLAGS}"
+            fi
+        else
+            if test_nz "${CFLAGS}"; then
+                compflags="${compflags} ${CFLAGS}"
+            fi
+        fi
         _toolchain_compcmd "${sourcekind}" "${objectfile}" "${sourcefile}" "${compflags}"; local compcmd="${_ret}"
         if ${xmake_sh_diagnosis}; then
             print "> ${compcmd}"
@@ -3329,6 +3338,9 @@ _check_cxsnippets() {
         _get_option_item "${name}" "ldflags"; local flags="${_ret}"
         if test_nz "${flags}"; then
             linkflags="${linkflags} ${flags}"
+        fi
+        if test_nz "${LDFLAGS}"; then
+            linkflags="${linkflags} ${LDFLAGS}"
         fi
         _toolchain_linkcmd "${toolkind}" "${binaryfile}" "${objectfile}" "${linkflags}"; local linkcmd="${_ret}"
         if ${xmake_sh_diagnosis}; then
