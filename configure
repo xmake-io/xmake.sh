@@ -55,7 +55,9 @@ print() {
 }
 
 wprint() {
-    printf "warning: ${@}\n"
+    if "${xmake_sh_verbose}"; then
+        printf "warning: ${@}\n"
+    fi
 }
 
 # test empty string
@@ -2695,12 +2697,12 @@ done
 
 # parse triplet
 # e.g. i686-linux-gnu, aarch64-apple-darwin, x86_64-w64-mingw32
-function _parse_triplet() {
+_parse_triplet() {
     local triplet="${1}"
     string_split "${triplet}" "-"
 }
 
-function _get_arch_from_cpu() {
+_get_arch_from_cpu() {
     local cpu="${1}"
     case "${cpu}" in
         i686) _ret="i386";;
@@ -2713,7 +2715,7 @@ function _get_arch_from_cpu() {
     esac
 }
 
-function _get_plat_from_vendor_os() {
+_get_plat_from_vendor_os() {
     local vendor="${1}"
     local os="${2}"
     case "${vendor}" in
@@ -2733,7 +2735,7 @@ function _get_plat_from_vendor_os() {
     esac
 }
 
-function _handle_autoconf_configs() {
+_handle_autoconf_configs() {
     if test_z "${_autoconf_host_type}"; then
         _autoconf_host_type="${_autoconf_build_type}"
     fi
