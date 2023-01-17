@@ -661,9 +661,9 @@ if test -d "/usr/local"; then
 elif test -d "/usr"; then
     _install_prefix_default="/usr"
 fi
-_install_bindir_default="bin"
-_install_libdir_default="lib"
-_install_includedir_default="include"
+_install_bindir_default="\${prefix}/bin"
+_install_libdir_default="\${prefix}/lib"
+_install_includedir_default="\${prefix}/include"
 
 # determining target platform
 # e.g.
@@ -3938,18 +3938,21 @@ _gmake_add_install_target() {
     # install target file
     _get_target_item "${target}" "kind"; local targetkind="${_ret}"
     if test_eq "${targetkind}" "binary"; then
-        print "\t@mkdir -p ${installdir}/${_install_bindir_default}" >> "${xmake_sh_makefile}"
-        print "\t@cp -p ${targetfile} ${installdir}/${_install_bindir_default}/${filename}" >> "${xmake_sh_makefile}"
+        string_replace "${_install_bindir_default}" "\${prefix}" "${installdir}"; _install_bindir_default="${_ret}"
+        print "\t@mkdir -p ${_install_bindir_default}" >> "${xmake_sh_makefile}"
+        print "\t@cp -p ${targetfile} ${_install_bindir_default}/${filename}" >> "${xmake_sh_makefile}"
     elif test_eq "${targetkind}" "static" || test_eq "${targetkind}" "shared"; then
-        print "\t@mkdir -p ${installdir}/${_install_libdir_default}" >> "${xmake_sh_makefile}"
-        print "\t@cp -p ${targetfile} ${installdir}/${_install_libdir_default}/${filename}" >> "${xmake_sh_makefile}"
+        string_replace "${_install_libdir_default}" "\${prefix}" "${installdir}"; _install_libdir_default="${_ret}"
+        print "\t@mkdir -p ${_install_libdir_default}" >> "${xmake_sh_makefile}"
+        print "\t@cp -p ${targetfile} ${_install_libdir_default}/${filename}" >> "${xmake_sh_makefile}"
     fi
 
     # install header files
     _get_target_item "${target}" "headerfiles"; local headerfiles="${_ret}"
     if test_nz "${headerfiles}"; then
+        string_replace "${_install_includedir_default}" "\${prefix}" "${installdir}"; _install_includedir_default="${_ret}"
         local srcheaderfile=""
-        local includedir="${installdir}/${_install_includedir_default}"
+        local includedir="${_install_includedir_default}"
         for srcheaderfile in ${headerfiles}; do
             string_split "${srcheaderfile}" ":"
             local srcheaderfile="${_ret}"
