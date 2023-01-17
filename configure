@@ -54,6 +54,10 @@ print() {
     printf "${@}\n"
 }
 
+wprint() {
+    printf "warning: ${@}\n"
+}
+
 # test empty string
 test_z() {
     if test "x${1}" = "x"; then
@@ -2570,12 +2574,15 @@ Common options:
   --toolchain=TOOLCHAIN   Set toolchain name.
                             - clang
                             - gcc
+  --buildir=DIR           Set build directory. (default: '"${xmake_sh_buildir}"')
 
+Autoconf options:
+  --build=BUILD           Configure for building on BUILD [guessed]
+  --host=HOST             Cross-compile to build programs to run on HOST [BUILD]
   --prefix=PREFIX         Set install files directory in tree rooted at PREFIX. (default: '"${_install_prefix_default}"')
   --bindir=DIR            Set install binaries directory in PREFIX/DIR. (default: '"${_install_bindir_default}"')
   --libdir=DIR            Set install libraries directory in PREFIX/DIR. (default: '"${_install_libdir_default}"')
   --includedir=DIR        Set install includes directory in PREFIX/DIR. (default: '"${_install_includedir_default}"')
-  --buildir=DIR           Set build directory. (default: '"${xmake_sh_buildir}"')
 
 Project options:
 '"$(_show_options_usage)"'
@@ -2669,11 +2676,10 @@ _handle_option() {
     return 1
 }
 while test $# != 0; do
-    if _handle_option ${1}; then
-        shift
-    else
-        raise "Unknown option: $1"
+    if ! _handle_option ${1}; then
+        wprint "unknown option: $1"
     fi
+    shift
 done
 
 #-----------------------------------------------------------------------------
