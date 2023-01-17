@@ -1631,6 +1631,9 @@ _get_target_compiler_flags() {
     fi
 
     # get flags from environments, e.g. $CFLAGS, $CXXFLAGS
+    if test_nz "${CPPFLAGS}"; then
+        result="${result} ${CPPFLAGS}"
+    fi
     if test_eq "${flagname}" "cflags" && test_nz "${CFLAGS}"; then
         result="${result} ${CFLAGS}"
     fi
@@ -3305,6 +3308,9 @@ _check_cxsnippets() {
             if test_nz "${CFLAGS}"; then
                 compflags="${compflags} ${CFLAGS}"
             fi
+        fi
+        if test_nz "${CPPFLAGS}"; then
+            compflags="${compflags} ${CPPFLAGS}"
         fi
         _toolchain_compcmd "${sourcekind}" "${objectfile}" "${sourcefile}" "${compflags}"; local compcmd="${_ret}"
         if ${xmake_sh_diagnosis}; then
