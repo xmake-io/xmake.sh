@@ -3191,7 +3191,7 @@ _get_funccode() {
     if string_contains "${func}" "("; then
         code="${func}"
     else
-        code="volatile void* p${func} = (void*)&${func};"
+        code="typedef void (*func_t)(); volatile func_t p${func} = (func_t)${func}; while (p${func}) {break;};"
     fi
     _ret="${code}"
 }
