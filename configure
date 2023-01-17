@@ -2610,6 +2610,7 @@ _show_version() {
 # --foo=yes => foo
 _parse_argument_name() {
     _ret=$(echo "${1#*--}" | sed "s/${2-=[^=]*}$//")
+    string_replace "${_ret}" "-" "_"
 }
 
 # --foo=yes => yes
