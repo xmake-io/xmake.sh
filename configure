@@ -3957,10 +3957,12 @@ _gmake_add_install_target() {
     _get_target_item "${target}" "kind"; local targetkind="${_ret}"
     if test_eq "${targetkind}" "binary"; then
         string_replace "${_install_bindir_default}" "\${prefix}" "${installdir}"; _install_bindir_default="${_ret}"
+        print "\t@echo installing ${targetfile} to ${_install_bindir_default}" >> "${xmake_sh_makefile}"
         print "\t@mkdir -p ${_install_bindir_default}" >> "${xmake_sh_makefile}"
         print "\t@cp -p ${targetfile} ${_install_bindir_default}/${filename}" >> "${xmake_sh_makefile}"
     elif test_eq "${targetkind}" "static" || test_eq "${targetkind}" "shared"; then
         string_replace "${_install_libdir_default}" "\${prefix}" "${installdir}"; _install_libdir_default="${_ret}"
+        print "\t@echo installing ${targetfile} to ${_install_libdir_default}" >> "${xmake_sh_makefile}"
         print "\t@mkdir -p ${_install_libdir_default}" >> "${xmake_sh_makefile}"
         print "\t@cp -p ${targetfile} ${_install_libdir_default}/${filename}" >> "${xmake_sh_makefile}"
     fi
