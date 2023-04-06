@@ -2878,6 +2878,18 @@ toolchain "aarch64_linux_gnu"
     set_toolset "ar" "aarch64-linux-gnu-ar" "ar"
 toolchain_end
 
+# emcc toolchain (wasm32)
+toolchain "emcc"
+    set_toolset "as" "emcc"
+    set_toolset "cc" "emcc"
+    set_toolset "cxx" "emcc" "em++"
+    set_toolset "mm" "emcc"
+    set_toolset "mxx" "emcc" "em++"
+    set_toolset "ld" "em++" "emcc"
+    set_toolset "sh" "em++" "emcc"
+    set_toolset "ar" "emar" "ar"
+toolchain_end
+
 # check platform
 _check_platform() {
     if test "x${_target_plat}" = "x"; then
@@ -3194,6 +3206,8 @@ _toolchain_detect() {
             else
                 toolchains="x86_64_w64_mingw32"
             fi
+        elif is_plat "wasm"; then
+            toolchains="emcc"
         elif is_plat "linux" && ! is_arch "${os_arch}"; then
             toolchains="envs"
             if is_arch "arm64"; then
