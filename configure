@@ -655,6 +655,8 @@ if is_host "msys" && test_nz "${MSYSTEM_CARCH}"; then
     _target_arch_default="${MSYSTEM_CARCH}"
 elif test_nz "${TERMUX_ARCH}"; then
     _target_arch_default="${TERMUX_ARCH}"
+elif test_nz "${EMSDK}"; then
+    _target_arch_default="wasm32"
 fi
 if test_eq "${_target_arch_default}" "i686"; then
     _target_arch_default="i386"
