@@ -645,6 +645,8 @@ if is_host "msys"; then
     _target_plat_default="mingw"
 elif is_host "freebsd"; then
     _target_plat_default="bsd"
+elif test_nz "${EMSDK}"; then
+    _target_plat_default="wasm"
 fi
 
 # set the default target architecture
