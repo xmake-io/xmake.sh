@@ -409,9 +409,15 @@ path_toolname() {
         clang) toolname="clang";;
         clang-*) toolname="clang";;
         */clang-*) toolname="clang";;
+        */emcc) toolname="clang";;
+        emcc) toolname="clang";;
+        */em++) toolname="clangxx";;
+        em++) toolname="clangxx";;
         *-ar) toolname="ar";;
         */ar) toolname="ar";;
         ar) toolname="ar";;
+        */emar) toolname="ar";;
+        emar) toolname="ar";;
         cc) toolname="gcc";;
         */cc) toolname="gcc";;
         c++) toolname="gxx";;
