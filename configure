@@ -104,6 +104,14 @@ string_replace() {
     _ret=$(echo "$1" | sed "s/${2}/${3}/g")
 }
 
+string_encode_spaces() {
+    string_replace "$1" ' ' '~!~'
+}
+
+string_restore_spaces() {
+    string_replace "$1" '~!~' ' '
+}
+
 # we avoid use `cut` command, because it's slow
 string_split() {
     local str="${1}"
@@ -792,7 +800,10 @@ _get_abstract_flag_for_gcc_clang() {
     local flag=""
     case "${itemname}" in
         defines)
-            string_replace "${value}" '"' '\\\"'; value="${_ret}"
+            string_restore_spaces "${value}"; value="${_ret}"
+            if ! string_contains "${value}" '\"'; then
+                string_replace "${value}" '"' '\\\"'; value="${_ret}"
+            fi
             flag="-D${value}"
             ;;
         undefines) flag="-U${value}";;
@@ -933,7 +944,7 @@ _get_abstract_flags() {
     local values="${4}"
     local flags=""
     local value=""
-    for value in "${values}"; do
+    for value in ${values}; do
         local flag=""
         case "${toolname}" in
             gcc) _get_abstract_flag_for_gcc_clang "${toolkind}" "${toolname}" "${itemname}" "${value}"; flag="${_ret}";;
@@ -2038,6 +2049,7 @@ add_defines() {
     if ${_loading_targets} && test_z "${_xmake_sh_option_current}"; then
         local public=false
         for define in "$@"; do
+            string_encode_spaces "${define}"; define="${_ret}"
             if test_nq "${define}" "{public}"; then
                 _add_target_item "${_xmake_sh_target_current}" "defines" "${define}"
             else
@@ -2046,6 +2058,7 @@ add_defines() {
         done
         if ${public}; then
             for define in "$@"; do
+                string_encode_spaces "${define}"; define="${_ret}"
                 if test_nq "${define}" "{public}"; then
                     _add_target_item "${_xmake_sh_target_current}" "defines_public" "${define}"
                 fi
