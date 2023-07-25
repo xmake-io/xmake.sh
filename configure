@@ -1400,7 +1400,11 @@ _get_target_extension() {
         if test "x${kind}" = "xstatic"; then
             extension=".a"
         elif test "x${kind}" = "xshared"; then
-            extension=".so"
+            if is_plat "macosx"; then
+                extension=".dylib"
+            else
+                extension=".so"
+            fi
         fi
     fi
     _ret="${extension}"
