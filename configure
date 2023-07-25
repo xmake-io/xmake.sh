@@ -4087,8 +4087,15 @@ _gmake_add_build() {
 
 _gmake_add_run_target() {
     local target=${1}
+    _get_targetdir "${target}"; local targetdir="${_ret}"
     _get_target_file "${target}"; local targetfile="${_ret}"
-    print "\t@${targetfile}" >> "${xmake_sh_makefile}"
+    if is_plat "macosx"; then
+        print "\t@DYLD_LIBRARY_PATH=${targetdir} ${targetfile}" >> "${xmake_sh_makefile}"
+    elif is_plat "linux" "bsd"; then
+        print "\t@LD_LIBRARY_PATH=${targetdir} ${targetfile}" >> "${xmake_sh_makefile}"
+    else
+        print "\t@${targetfile}" >> "${xmake_sh_makefile}"
+    fi
 }
 
 _gmake_add_run_targets() {
