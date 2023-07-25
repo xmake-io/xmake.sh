@@ -4173,17 +4173,41 @@ _gmake_add_install_target() {
     _get_target_file "${target}"; local targetfile="${_ret}"
     path_filename "${targetfile}"; local filename="${_ret}"
     _get_target_item "${target}" "installdir"; local installdir="${_ret}"
+    _get_target_item "${target}" "kind"; local targetkind="${_ret}"
     if test_z "${installdir}"; then
         installdir="\$(INSTALLDIR)"
     fi
 
+    # @see https://github.com/tboox/tbox/issues/214
+    install_for_soname=false
+    if test_eq "${targetkind}" "shared"; then
+        _get_target_item "${target}" "version"; local version="${_ret}"
+        _get_target_soname "${target}"; local soname="${_ret}"
+        if test_nz "${soname}" && test_nz "${version}"; then
+            _get_target_extension "${target}"; local extension="${_ret}"
+            local targetfile_with_version="${installdir}/${filename}.${version}"
+            if test_eq "${extension}" ".dylib"; then
+                path_basename "${filename}"; local basename="${_ret}"
+                targetfile_with_version="${installdir}/${basename}.${version}${extension}"
+            fi
+            local targetfile_with_soname="${installdir}/${soname}"
+            path_filename "${targetfile_with_version}"; local targetfilename_with_version="${_ret}"
+            if test_nq "${soname}" "${filename}" && test_nq "${soname}" "${targetfilename_with_version}"; then
+                install_for_soname=true
+            fi
+        fi
+    fi
+
     # install target file
-    _get_target_item "${target}" "kind"; local targetkind="${_ret}"
     if test_eq "${targetkind}" "binary"; then
         string_replace "${_install_bindir_default}" "\${prefix}" "${installdir}"; _install_bindir_default="${_ret}"
         print "\t@echo installing ${targetfile} to ${_install_bindir_default}" >> "${xmake_sh_makefile}"
         print "\t@mkdir -p ${_install_bindir_default}" >> "${xmake_sh_makefile}"
         print "\t@cp -p ${targetfile} ${_install_bindir_default}/${filename}" >> "${xmake_sh_makefile}"
+    elif ${install_for_soname}; then
+        print "\t@echo installing ${targetfile} to ${_install_libdir_default}" >> "${xmake_sh_makefile}"
+        print "\t@cp -p ${targetfile} ${targetfile_with_version}" >> "${xmake_sh_makefile}"
+        print "\t@cd ${installdir} && ln -sf ${targetfilename_with_version} ${soname} && ln -sf ${soname} ${filename}" >> "${xmake_sh_makefile}"
     elif test_eq "${targetkind}" "static" || test_eq "${targetkind}" "shared"; then
         string_replace "${_install_libdir_default}" "\${prefix}" "${installdir}"; _install_libdir_default="${_ret}"
         print "\t@echo installing ${targetfile} to ${_install_libdir_default}" >> "${xmake_sh_makefile}"
