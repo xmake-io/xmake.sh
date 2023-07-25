@@ -1447,6 +1447,27 @@ _get_target_filename() {
     _ret="${filename}"
 }
 
+# get target soname
+_get_target_soname() {
+    local soname=""
+    local name="${1}"
+    _get_target_item "${name}" "kind"; local targetkind="${_ret}"
+    if test_eq "${targetkind}" "shared" && is_plat "macosx" "linux" "bsd"; then
+        _get_target_item "${name}" "version_soname"; local version_soname="${_ret}"
+        if test_nz "${version_soname}"; then
+            _get_target_filename "${name}"; soname="${_ret}"
+            _get_target_extension "${name}"; local extension="${_ret}"
+            if test_eq "${extension}" ".dylib"; then
+                path_basename "${soname}"; local basename="{_ret}"
+                soname="${basename}.${version_soname}${extension}"
+            else
+                soname="${soname}.${version_soname}"
+            fi
+        fi
+    fi
+    _ret="${soname}"
+}
+
 # get target directory
 _get_targetdir() {
     local name="${1}"
@@ -1950,8 +1971,10 @@ set_version() {
     fi
     local version="${1}"
     local version_build="${2}"
+    local version_soname="${3}"
     _set_target_item "${_xmake_sh_target_current}" "version" "${version}"
     _set_target_item "${_xmake_sh_target_current}" "version_build" "${version_build}"
+    _set_target_item "${_xmake_sh_target_current}" "version_soname" "${version_soname}"
 }
 
 # set default in target
