@@ -4050,9 +4050,7 @@ _gmake_add_build_target() {
             path_filename "${targetfile_with_version}"; local targetfilename_with_version="${_ret}"
             if test_nq "${soname}" "${filename}" && test_nq "${soname}" "${targetfilename_with_version}"; then
                 print "\t@cp -p ${targetfile} ${targetfile_with_version}" >> "${xmake_sh_makefile}"
-                print "\t@rm ${targetfile}" >> "${xmake_sh_makefile}"
-                print "\t@if test -f ${targetfile_with_soname}; then rm ${targetfile_with_soname}; fi" >> "${xmake_sh_makefile}"
-                print "\t@cd ${targetdir} && ln -s ${targetfilename_with_version} ${soname} && ln -s ${soname} ${filename}" >> "${xmake_sh_makefile}"
+                print "\t@cd ${targetdir} && ln -sf ${targetfilename_with_version} ${soname} && ln -sf ${soname} ${filename}" >> "${xmake_sh_makefile}"
             fi
         fi
     fi
