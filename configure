@@ -1448,6 +1448,10 @@ _get_target_filename() {
 }
 
 # get target soname
+# @see https://github.com/tboox/tbox/issues/214
+#
+# set_version "1.0.1" "" "1" -> libfoo.so.1, libfoo.1.dylib
+# set_version "1.0.1" "" "A" -> libfoo.so.A, libfoo.A.dylib
 _get_target_soname() {
     local soname=""
     local name="${1}"
@@ -1458,7 +1462,7 @@ _get_target_soname() {
             _get_target_filename "${name}"; soname="${_ret}"
             _get_target_extension "${name}"; local extension="${_ret}"
             if test_eq "${extension}" ".dylib"; then
-                path_basename "${soname}"; local basename="{_ret}"
+                path_basename "${soname}"; local basename="${_ret}"
                 soname="${basename}.${version_soname}${extension}"
             else
                 soname="${soname}.${version_soname}"
@@ -1618,6 +1622,17 @@ _get_target_toolchain_flags_for_gcc() {
         elif test_eq "${toolkind}" "cc" || test_eq "${toolkind}" "cxx"; then
             flags="${flags} -fPIC"
         fi
+        # @see https://github.com/tboox/tbox/issues/214
+        if test_eq "${toolkind}" "sh"; then
+            _get_target_soname "${name}"; local soname="${_ret}"
+            if test_nz "${soname}"; then
+                if is_plat "macosx"; then
+                    flags="${flags} -Wl,-install_name,${soname}"
+                else
+                    flags="${flags} -Wl,-soname,${soname}"
+                fi
+            fi
+        fi
     fi
     _ret="${flags}"
 }
@@ -1636,6 +1651,17 @@ _get_target_toolchain_flags_for_clang() {
             flags="${flags} -shared -fPIC"
         elif test_eq "${toolkind}" "cc" || test_eq "${toolkind}" "cxx"; then
             flags="${flags} -fPIC"
+        fi
+        # @see https://github.com/tboox/tbox/issues/214
+        if test_eq "${toolkind}" "sh"; then
+            _get_target_soname "${name}"; local soname="${_ret}"
+            if test_nz "${soname}"; then
+                if is_plat "macosx"; then
+                    flags="${flags} -Wl,-install_name,${soname}"
+                else
+                    flags="${flags} -Wl,-soname,${soname}"
+                fi
+            fi
         fi
     fi
     if is_plat "macosx"; then
