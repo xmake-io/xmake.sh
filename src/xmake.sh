@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set_project "hello"
-set_version "1.0.1" "%Y%m%d%H%M" "1"
+set_version "1.0.1" "%Y%m%d%H%M" "1" # version, build, soname version
 
 option "debug" "Enable debug compilation mode." false
 option "tests" "Enable tests." true

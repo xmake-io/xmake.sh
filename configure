@@ -1457,8 +1457,9 @@ _get_target_soname() {
     local name="${1}"
     _get_target_item "${name}" "kind"; local targetkind="${_ret}"
     if test_eq "${targetkind}" "shared" && is_plat "macosx" "linux" "bsd"; then
+        _get_target_item "${name}" "version"; local version="${_ret}"
         _get_target_item "${name}" "version_soname"; local version_soname="${_ret}"
-        if test_nz "${version_soname}"; then
+        if test_nz "${version}" && test_nz "${version_soname}"; then
             _get_target_filename "${name}"; soname="${_ret}"
             _get_target_extension "${name}"; local extension="${_ret}"
             if test_eq "${extension}" ".dylib"; then
@@ -4032,6 +4033,31 @@ _gmake_add_build_target() {
         emar) _gmake_add_build_target_for_ar "${toolkind}" "${targetfile}" "${objectfiles}" "${flagname}";;
         *) raise "unknown toolname(${toolname})!" ;;
     esac
+
+    # @see https://github.com/tboox/tbox/issues/214
+    if test_eq "${targetkind}" "shared"; then
+        _get_target_item "${target}" "version"; local version="${_ret}"
+        _get_target_soname "${target}"; local soname="${_ret}"
+        if test_nz "${soname}" && test_nz "${version}"; then
+            _get_target_filename "${target}"; local filename="${_ret}"
+            _get_target_extension "${target}"; local extension="${_ret}"
+            local targetfile_with_version="${targetdir}/${filename}.${version}"
+            if test_eq "${extension}" ".dylib"; then
+                path_basename "${filename}"; local basename="${_ret}"
+                targetfile_with_version="${targetdir}/${basename}.${version}${extension}"
+            fi
+            local targetfile_with_soname="${targetdir}/${soname}"
+            path_filename "${targetfile_with_version}"; local targetfilename_with_version="${_ret}"
+            if test_nq "${soname}" "${filename}" && test_nq "${soname}" "${targetfilename_with_version}"; then
+                print "\t@cp -p ${targetfile} ${targetfile_with_version}" >> "${xmake_sh_makefile}"
+                print "\t@rm ${targetfile}" >> "${xmake_sh_makefile}"
+                print "\t@if test -f ${targetfile_with_soname}; then rm ${targetfile_with_soname}; fi" >> "${xmake_sh_makefile}"
+                print "\t@cd ${targetdir} && ln -s ${targetfilename_with_version} ${soname} && ln -s ${soname} ${filename}" >> "${xmake_sh_makefile}"
+            fi
+        fi
+    fi
+
+    # end
     echo "" >> "${xmake_sh_makefile}"
 
     # build objects
