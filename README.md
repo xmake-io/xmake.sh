@@ -242,6 +242,8 @@ $ make run
   - [x] add_installfiles
   - [x] add_headerfiles
   - [x] add_options
+  - [x] before_install
+  - [x] after_install
 - [x] target_end
 - [x] option
   - [x] set_default
