@@ -4762,9 +4762,9 @@ _ninja_add_run_target() {
     _get_target_file "${target}"; local targetfile="${_ret}"
     local command=""
     if is_host "msys" "cygwin" "mingw"; then
-        local targetfile_abs="${xmake_sh_projectdir}/${targetfile}"
-        local targetfile_win="${targetfile_abs//\//\\}"
-        command="cmd.exe /c \"\"${targetfile_win}\"\""
+        local run_script="cd ${xmake_sh_projectdir} && ${targetfile}"
+        _shell_escape_single_quotes "${run_script}"; local escaped_run_script="${_ret}"
+        command="sh -lc ${escaped_run_script}"
     elif is_plat "macosx"; then
         command="DYLD_LIBRARY_PATH=${targetdir} ${targetfile}"
     elif is_plat "linux" "bsd"; then
