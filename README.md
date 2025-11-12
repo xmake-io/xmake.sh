@@ -73,14 +73,10 @@ Xmake.sh is a script-only build utility like autotools.
 #### Supported features
 
 - [x] Generate makefile
+- [x] Generate build.ninja
 - [x] Custom toolchains
 - [x] Detect options, code snippets, dependencies, compiler features
 - [x] Support builtin variables
-
-#### In the future it will support
-
-- [ ] Generate build.ninja
-- [ ] Support more xmake features
 
 ### New project
 
@@ -165,28 +161,56 @@ if has_config "tests"; then
 fi
 ```
 
-### Configure and generate makefile
+### Makefile generator
+
+#### Configure and generate makefile
 
 ```console
 $ ./configure
 ```
 
-### Build project
+#### Build project
 
 ```console
 $ make
 ```
 
-### Install artifacts
+#### Install artifacts
 
 ```console
 $ make install
 ```
 
-### Run program
+#### Run program
 
 ```console
 $ make run
+```
+
+### Ninja generator
+
+#### Configure and generate build.ninja
+
+```console
+$ ./configure --generator=ninja
+```
+
+#### Build project
+
+```console
+$ ninja
+```
+
+#### Install artifacts
+
+```console
+$ ninja install
+```
+
+#### Run program
+
+```console
+$ ninja run
 ```
 
 ### Supported apis

@@ -53,6 +53,7 @@ target "demo"
     add_headerfiles "foo/(*.h)" "hello"
     add_installfiles "res/(png/**.png)" "share"
     add_options "lua"
+    add_defines "TEST_MACRO=\"xmake\""
     if has_config "debug"; then
         add_defines "DEBUG" "TEST"
     fi

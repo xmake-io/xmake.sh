@@ -26,8 +26,12 @@ jobs:
           args: >
             bash -c
             "uname -a &&
-            apt update && apt install -y git build-essential &&
+            apt update && apt install -y git build-essential ninja-build &&
             cd /github/workspace &&
             ./configure &&
-            make && make run"
+            make && make run &&
+            rm -rf build &&
+            ./configure --generator=ninja --builddir=build-ninja &&
+            ninja &&
+            ninja run"
 

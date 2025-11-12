@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Installation
         run: |
-          pacman -Sy --noconfirm --needed glibc git base-devel perl make unzip
+          pacman -Sy --noconfirm --needed glibc git base-devel perl make unzip ninja
           git config --global --add safe.directory /__w/xmake/xmake
           git config --global --add safe.directory /__w/xmake-repo/xmake-repo
       - uses: actions/checkout@v1
@@ -31,3 +31,7 @@ jobs:
           ./configure
           make
           make run
+          rm -rf build
+          ./configure --generator=ninja --builddir=build-ninja
+          ninja
+          ninja run
