@@ -108,7 +108,7 @@ string_replace() {
 # escape value for writing into ninja files
 _ninja_escape() {
     local value="${1}"
-    value=$(printf '%s' "${value}" | sed 's/\$\$/\$/g' | sed 's/\$/\$\$/g')
+    value=$(printf '%s' "${value}" | sed 's/\$/$$/g')
     _ret="${value}"
 }
 
