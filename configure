@@ -4564,6 +4564,18 @@ _ninja_add_rules() {
     echo "" >> "${xmake_sh_ninjafile}"
 }
 
+_ninja_get_mkdir_command() {
+    local dir="${1}"
+    local command=""
+    if is_host "msys" "cygwin" "mingw"; then
+        local dir_win="${dir//\//\\}"
+        command="if not exist \"${dir_win}\" mkdir \"${dir_win}\""
+    else
+        command="mkdir -p \"${dir}\""
+    fi
+    _ret="${command}"
+}
+
 _ninja_add_toolchains() {
     _get_targets_toolkinds; local kinds="${_ret}"
     if test_nz "${kinds}"; then
@@ -4600,7 +4612,8 @@ _ninja_add_build_object() {
     _get_target_flags "${target}" "${sourcekind}"; local flags="${_ret}"
     _toolchain_compcmd "${sourcekind}" "${objectfile}" "${sourcefile}" "${flags}"; local compcmd="${_ret}"
     path_directory "${objectfile}"; local objectdir="${_ret}"
-    local command="mkdir -p \"${objectdir}\" && ${compcmd}"
+    _ninja_get_mkdir_command "${objectdir}"; local mkdir_cmd="${_ret}"
+    local command="${mkdir_cmd} && ${compcmd}"
     local description="compiling.${_target_mode} ${sourcefile}"
     _ninja_escape "${command}"; command="${_ret}"
     _ninja_escape "${description}"; description="${_ret}"
@@ -4638,7 +4651,8 @@ _ninja_add_build_target() {
     _get_target_flags "${target}" "${toolkind}"; local linkflags="${_ret}"
     _toolchain_linkcmd "${toolkind}" "${targetfile}" "${objectfiles}" "${linkflags}"; local linkcmd="${_ret}"
 
-    local command="mkdir -p \"${targetdir}\" && ${linkcmd}"
+    _ninja_get_mkdir_command "${targetdir}"; local mkdir_cmd="${_ret}"
+    local command="${mkdir_cmd} && ${linkcmd}"
     local description="linking.${_target_mode} ${targetfile}"
 
     if test_eq "${targetkind}" "shared"; then
