@@ -23,10 +23,13 @@ jobs:
 
       - name: Prepare
         run: |
-          brew install mingw-w64
+          brew install mingw-w64 ninja
 
       - name: Tests
         run: |
           ./configure
           make
+          rm -rf build
+          ./configure --generator=ninja --builddir=build-ninja
+          ninja
 

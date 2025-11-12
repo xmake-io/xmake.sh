@@ -21,8 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
+      - name: Installation
+        run: |
+          brew install ninja
+
       - name: Tests
         run: |
           ./configure
           make
           make run
+          rm -rf build
+          ./configure --generator=ninja --builddir=build-ninja
+          ninja
+          ninja run

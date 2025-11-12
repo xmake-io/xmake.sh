@@ -24,10 +24,14 @@ jobs:
       - name: Installation
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc g++
+          sudo apt-get install -y gcc g++ ninja-build
 
       - name: Tests
         run: |
           ./configure
           make
           make run
+          rm -rf build
+          ./configure --generator=ninja --builddir=build-ninja
+          ninja
+          ninja run

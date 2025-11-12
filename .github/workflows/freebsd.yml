@@ -29,10 +29,14 @@ jobs:
           sync: sshfs
           mem: 4096
           copyback: false
-          prepare: pkg install -y git curl unzip gmake llvm gsed bash perl5 openssl
+          prepare: pkg install -y git curl unzip gmake llvm gsed bash perl5 openssl ninja
           run: |
             ./configure
             gmake
             gmake run
+            rm -rf build
+            ./configure --generator=ninja --builddir=build-ninja
+            ninja
+            ninja run
 
 
