@@ -4842,46 +4842,23 @@ _ninja_add_clean() {
     _ninja_add_clean_targets
 }
 
-_ninja_add_install_target() {
-    local target=${1}
-    _get_target_file "${target}"; local targetfile="${_ret}"
-    path_filename "${targetfile}"; local filename="${_ret}"
-    _get_target_item "${target}" "installdir"; local installdir="${_ret}"
-    _get_target_item "${target}" "kind"; local targetkind="${_ret}"
-
-    local install_for_soname=false
-    local version=""
-    local soname=""
-    local extension=""
-    local filename_basename=""
-    if test_eq "${targetkind}" "shared"; then
-        _get_target_item "${target}" "version"; version="${_ret}"
-        _get_target_soname "${target}"; soname="${_ret}"
-        _get_target_extension "${target}"; extension="${_ret}"
-        path_basename "${filename}"; filename_basename="${_ret}"
-        if test_nz "${soname}" && test_nz "${version}"; then
-            local targetfilename_with_version_guess="${filename}.${version}"
-            if test_eq "${extension}" ".dylib"; then
-                targetfilename_with_version_guess="${filename_basename}.${version}${extension}"
-            fi
-            if test_nq "${soname}" "${filename}" && test_nq "${soname}" "${targetfilename_with_version_guess}"; then
-                install_for_soname=true
-            fi
-        fi
-    fi
-
+_ninja_install_prepare_script() {
+    local target="${1}"
     local ninjadir="${xmake_sh_builddir}/.ninja"
     local scriptdir="${xmake_sh_projectdir}/${ninjadir}"
     mkdir -p "${scriptdir}"
-    local scriptfile_rel="${ninjadir}/install_${target}.sh"
-    local scriptfile="${xmake_sh_projectdir}/${scriptfile_rel}"
+    _ret="${scriptdir}/install_${target}.sh"
+    _ret2="${ninjadir}/install_${target}.sh"
+}
 
-    _shell_escape_single_quotes "${_install_prefix_default}"; local escaped_prefix_default="${_ret}"
-    _shell_escape_single_quotes "${installdir}"; local escaped_installdir_template="${_ret}"
-    _shell_escape_single_quotes "${xmake_sh_projectdir}"; local escaped_projectdir="${_ret}"
-    _shell_escape_single_quotes "${_install_bindir_default}"; local escaped_bindir_template="${_ret}"
-    _shell_escape_single_quotes "${_install_libdir_default}"; local escaped_libdir_template="${_ret}"
-    _shell_escape_single_quotes "${_install_includedir_default}"; local escaped_includedir_template="${_ret}"
+_ninja_install_write_header() {
+    local scriptfile="${1}"
+    local escaped_prefix_default="${2}"
+    local escaped_installdir_template="${3}"
+    local escaped_projectdir="${4}"
+    local escaped_bindir_template="${5}"
+    local escaped_libdir_template="${6}"
+    local escaped_includedir_template="${7}"
 
     cat > "${scriptfile}" <<EOF
 #!/bin/sh
@@ -4961,6 +4938,18 @@ bindir_template=${escaped_bindir_template}
 libdir_template=${escaped_libdir_template}
 includedir_template=${escaped_includedir_template}
 EOF
+}
+
+_ninja_install_append_target_artifacts() {
+    local scriptfile="${1}"
+    local targetkind="${2}"
+    local install_for_soname="${3}"
+    local targetfile="${4}"
+    local filename="${5}"
+    local version="${6}"
+    local soname="${7}"
+    local extension="${8}"
+    local filename_basename="${9}"
 
     if test_eq "${targetkind}" "binary"; then
         _shell_escape_single_quotes "${targetfile}"; local escaped_targetfile="${_ret}"
@@ -4968,11 +4957,9 @@ EOF
         _shell_escape_single_quotes "${dest_template}"; local escaped_dest_template="${_ret}"
         echo "copy_file ${escaped_targetfile} ${escaped_dest_template}" >> "${scriptfile}"
     elif ${install_for_soname}; then
-        local base_template="${_install_libdir_default}/${filename}"
         local version_template="${_install_libdir_default}/${filename}.${version}"
         if test_eq "${extension}" ".dylib"; then
-            path_basename "${filename}"; local basename="${_ret}"
-            version_template="${_install_libdir_default}/${basename}.${version}${extension}"
+            version_template="${_install_libdir_default}/${filename_basename}.${version}${extension}"
         fi
         _shell_escape_single_quotes "${targetfile}"; local escaped_targetfile="${_ret}"
         _shell_escape_single_quotes "${version_template}"; local escaped_version_template="${_ret}"
@@ -4995,8 +4982,11 @@ EOF
         _shell_escape_single_quotes "${dest_template}"; local escaped_dest_template="${_ret}"
         echo "copy_file ${escaped_targetfile} ${escaped_dest_template}" >> "${scriptfile}"
     fi
+}
 
-    _get_target_item "${target}" "headerfiles"; local headerfiles="${_ret}"
+_ninja_install_append_headerfiles() {
+    local scriptfile="${1}"
+    local headerfiles="${2}"
     if test_nz "${headerfiles}"; then
         local srcheaderfile=""
         for srcheaderfile in ${headerfiles}; do
@@ -5024,8 +5014,12 @@ EOF
             echo "copy_file ${escaped_src} ${escaped_dst}" >> "${scriptfile}"
         done
     fi
+}
 
-    _get_target_item "${target}" "installfiles"; local installfiles="${_ret}"
+_ninja_install_append_installfiles() {
+    local scriptfile="${1}"
+    local installdir="${2}"
+    local installfiles="${3}"
     if test_nz "${installfiles}"; then
         local srcinstallfile=""
         for srcinstallfile in ${installfiles}; do
@@ -5055,6 +5049,63 @@ EOF
             echo "copy_file ${escaped_src} ${escaped_dst}" >> "${scriptfile}"
         done
     fi
+}
+
+_ninja_add_install_target() {
+    local target=${1}
+    _get_target_file "${target}"; local targetfile="${_ret}"
+    path_filename "${targetfile}"; local filename="${_ret}"
+    _get_target_item "${target}" "installdir"; local installdir="${_ret}"
+    _get_target_item "${target}" "kind"; local targetkind="${_ret}"
+
+    local install_for_soname=false
+    local version=""
+    local soname=""
+    local extension=""
+    local filename_basename=""
+    if test_eq "${targetkind}" "shared"; then
+        _get_target_item "${target}" "version"; version="${_ret}"
+        _get_target_soname "${target}"; soname="${_ret}"
+        _get_target_extension "${target}"; extension="${_ret}"
+        path_basename "${filename}"; filename_basename="${_ret}"
+        if test_nz "${soname}" && test_nz "${version}"; then
+            local targetfilename_with_version_guess="${filename}.${version}"
+            if test_eq "${extension}" ".dylib"; then
+                targetfilename_with_version_guess="${filename_basename}.${version}${extension}"
+            fi
+            if test_nq "${soname}" "${filename}" && test_nq "${soname}" "${targetfilename_with_version_guess}"; then
+                install_for_soname=true
+            fi
+        fi
+    fi
+
+    _ninja_install_prepare_script "${target}"
+    local scriptfile="${_ret}"
+    local scriptfile_rel="${_ret2}"
+
+    _shell_escape_single_quotes "${_install_prefix_default}"; local escaped_prefix_default="${_ret}"
+    _shell_escape_single_quotes "${installdir}"; local escaped_installdir_template="${_ret}"
+    _shell_escape_single_quotes "${xmake_sh_projectdir}"; local escaped_projectdir="${_ret}"
+    _shell_escape_single_quotes "${_install_bindir_default}"; local escaped_bindir_template="${_ret}"
+    _shell_escape_single_quotes "${_install_libdir_default}"; local escaped_libdir_template="${_ret}"
+    _shell_escape_single_quotes "${_install_includedir_default}"; local escaped_includedir_template="${_ret}"
+
+    _ninja_install_write_header "${scriptfile}" \
+        "${escaped_prefix_default}" \
+        "${escaped_installdir_template}" \
+        "${escaped_projectdir}" \
+        "${escaped_bindir_template}" \
+        "${escaped_libdir_template}" \
+        "${escaped_includedir_template}"
+
+    _ninja_install_append_target_artifacts "${scriptfile}" "${targetkind}" "${install_for_soname}" \
+        "${targetfile}" "${filename}" "${version}" "${soname}" "${extension}" "${filename_basename}"
+
+    _get_target_item "${target}" "headerfiles"; local headerfiles="${_ret}"
+    _ninja_install_append_headerfiles "${scriptfile}" "${headerfiles}"
+
+    _get_target_item "${target}" "installfiles"; local installfiles="${_ret}"
+    _ninja_install_append_installfiles "${scriptfile}" "${installdir}" "${installfiles}"
 
     echo "" >> "${scriptfile}"
     chmod +x "${scriptfile}"
