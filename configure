@@ -4761,7 +4761,10 @@ _ninja_add_run_target() {
     _get_targetdir "${target}"; local targetdir="${_ret}"
     _get_target_file "${target}"; local targetfile="${_ret}"
     local command=""
-    if is_plat "macosx"; then
+    if is_host "msys" "cygwin" "mingw"; then
+        local targetfile_win="${targetfile//\//\\}"
+        command="cmd.exe /c \"${targetfile_win}\""
+    elif is_plat "macosx"; then
         command="DYLD_LIBRARY_PATH=${targetdir} ${targetfile}"
     elif is_plat "linux" "bsd"; then
         command="LD_LIBRARY_PATH=${targetdir} ${targetfile}"
