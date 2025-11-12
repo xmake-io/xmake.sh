@@ -256,7 +256,12 @@ string_startswith() {
 string_dupch() {
     local count=${1}
     local ch=${2}
-    printf %${count}s | tr " " "${ch}"
+    local result=""
+    while [ "${count:-0}" -gt 0 ]; do
+        result="${result}${ch}"
+        count=$((count - 1))
+    done
+    printf '%s' "${result}"
 }
 
 # replace file content
@@ -676,30 +681,15 @@ _map_set() {
 # detect hosts
 os_host=`uname`
 string_tolower ${os_host}; os_host="${_ret}"
-if echo "${os_host}" | grep cygwin >/dev/null 2>&1; then
-    os_host="cygwin"
-fi
-if echo "${os_host}" | grep msys >/dev/null 2>&1; then
-    os_host="msys"
-fi
-if echo "${os_host}" | grep mingw >/dev/null 2>&1; then
-    os_host="msys"
-fi
-if echo "${os_host}" | grep darwin >/dev/null 2>&1; then
-    os_host="macosx"
-fi
-if echo "${os_host}" | grep linux >/dev/null 2>&1; then
-    os_host="linux"
-fi
-if echo "${os_host}" | grep freebsd >/dev/null 2>&1; then
-    os_host="freebsd"
-fi
-if echo "${os_host}" | grep bsd >/dev/null 2>&1; then
-    os_host="bsd"
-fi
-if echo "${os_host}" | grep Haiku >/dev/null 2>&1; then
-    os_host="haiku"
-fi
+case "${os_host}" in
+    *cygwin*) os_host="cygwin" ;;
+    *mingw*|*msys*) os_host="msys" ;;
+    *darwin*) os_host="macosx" ;;
+    *linux*) os_host="linux" ;;
+    *freebsd*) os_host="freebsd" ;;
+    *bsd*) os_host="bsd" ;;
+    *haiku*) os_host="haiku" ;;
+esac
 
 # determining host
 # e.g.
@@ -2916,13 +2906,19 @@ _show_version() {
 
 # --foo=yes => foo
 _parse_argument_name() {
-    _ret=$(echo "${1#*--}" | sed "s/${2-=[^=]*}$//")
-    string_replace "${_ret}" "-" "_"
+    local arg="${1#--}"
+    case "${arg}" in
+        *=*) arg="${arg%%=*}" ;;
+    esac
+    string_replace "${arg}" "-" "_"
 }
 
 # --foo=yes => yes
 _parse_argument_value() {
-    _ret=$(echo "$1" | sed "s/^${2-[^=]*=}//")
+    case "${1}" in
+        *=*) _ret="${1#*=}" ;;
+        *) _ret="" ;;
+    esac
 }
 
 # parse input arguments
