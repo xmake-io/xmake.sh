@@ -107,15 +107,39 @@ string_replace() {
 
 # escape value for writing into ninja files
 _ninja_escape() {
-    local value="${1}"
-    value=$(printf '%s' "${value}" | sed 's/\$/$$/g')
-    _ret="${value}"
+    local rest="${1}"
+    local result=""
+    while :; do
+        case "${rest}" in
+            *\$*)
+                result="${result}${rest%%\$*}\$\$"
+                rest="${rest#*\$}"
+                ;;
+            *)
+                result="${result}${rest}"
+                break
+                ;;
+        esac
+    done
+    _ret="${result}"
 }
 
 _shell_escape_single_quotes() {
     local value="${1}"
-    string_replace "${value}" "'" "'\"'\"'"; value="${_ret}"
-    _ret="'${value}'"
+    local escaped=""
+    while :; do
+        case "${value}" in
+            *"'"*)
+                escaped="${escaped}${value%%\'*}'\"'\"'"
+                value="${value#*\'}"
+                ;;
+            *)
+                escaped="${escaped}${value}"
+                break
+                ;;
+        esac
+    done
+    _ret="'${escaped}'"
 }
 
 # we avoid use `cut` command, because it's slow
