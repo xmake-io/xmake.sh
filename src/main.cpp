@@ -7,5 +7,8 @@ using namespace std;
 int main(int argc, char** argv) {
     cout << "add(1, 2) = " << add(1, 2) << endl;
     cout << "sub(1, 2) = " << sub(1, 2) << endl;
+#ifdef TEST_MACRO
+    cout << "TEST_MACRO = " << TEST_MACRO << endl;
+#endif
     return 0;
 }

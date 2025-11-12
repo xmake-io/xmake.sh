@@ -102,18 +102,22 @@ string_tolower() {
 }
 
 string_replace() {
-    _ret=$(echo "$1" | sed "s/${2}/${3}/g")
-}
-
-# escape value for writing into ninja files
-_ninja_escape() {
-    local rest="${1}"
+    local src="${1}"
+    local search="${2}"
+    local replace="${3}"
+    if test_z "${search}"; then
+        _ret="${src}"
+        return
+    fi
+    local rest="${src}"
     local result=""
+    local prefix=""
     while :; do
         case "${rest}" in
-            *\$*)
-                result="${result}${rest%%\$*}\$\$"
-                rest="${rest#*\$}"
+            *"${search}"*)
+                prefix="${rest%%"${search}"*}"
+                result="${result}${prefix}${replace}"
+                rest="${rest#*"${search}"}"
                 ;;
             *)
                 result="${result}${rest}"
@@ -124,22 +128,55 @@ _ninja_escape() {
     _ret="${result}"
 }
 
+# escape value for writing into ninja files
+_ninja_escape() {
+    local rest="${1}"
+    case "${rest}" in
+        *\$*)
+            local result=""
+            while :; do
+                case "${rest}" in
+                    *\$*)
+                        result="${result}${rest%%\$*}\$\$"
+                        rest="${rest#*\$}"
+                        ;;
+                    *)
+                        result="${result}${rest}"
+                        break
+                        ;;
+                esac
+            done
+            _ret="${result}"
+            ;;
+        *)
+            _ret="${rest}"
+            ;;
+    esac
+}
+
 _shell_escape_single_quotes() {
     local value="${1}"
-    local escaped=""
-    while :; do
-        case "${value}" in
-            *"'"*)
-                escaped="${escaped}${value%%\'*}'\"'\"'"
-                value="${value#*\'}"
-                ;;
-            *)
-                escaped="${escaped}${value}"
-                break
-                ;;
-        esac
-    done
-    _ret="'${escaped}'"
+    case "${value}" in
+        *"'"*)
+            local escaped=""
+            while :; do
+                case "${value}" in
+                    *"'"*)
+                        escaped="${escaped}${value%%\'*}'\"'\"'"
+                        value="${value#*\'}"
+                        ;;
+                    *)
+                        escaped="${escaped}${value}"
+                        break
+                        ;;
+                esac
+            done
+            _ret="'${escaped}'"
+            ;;
+        *)
+            _ret="'${value}'"
+            ;;
+    esac
 }
 
 # we avoid use `cut` command, because it's slow
@@ -876,7 +913,7 @@ _get_abstract_flag_for_gcc_clang() {
     local flag=""
     case "${itemname}" in
         defines)
-            string_replace "${value}" '"' '\\\"'; value="${_ret}"
+            string_replace "${value}" '"' '\"'; value="${_ret}"
             flag="-D${value}"
             ;;
         undefines) flag="-U${value}";;
