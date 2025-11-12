@@ -4625,11 +4625,16 @@ _ninja_add_build_object() {
     _toolchain_compcmd "${sourcekind}" "${objectfile}" "${sourcefile}" "${flags}"; local compcmd="${_ret}"
     path_directory "${objectfile}"; local objectdir="${_ret}"
     local command=""
+    local use_shell_wrapper=false
     if is_host "msys" "cygwin" "mingw"; then
-        local objectdir_win="${objectdir//\//\\}"
-        command="cmd.exe /c if not exist \"${objectdir_win}\" mkdir \"${objectdir_win}\" && ${compcmd}"
+        use_shell_wrapper=true
+        command="mkdir -p \"${objectdir}\" && ${compcmd}"
     else
         command="mkdir -p \"${objectdir}\" && ${compcmd}"
+    fi
+    if ${use_shell_wrapper}; then
+        _shell_escape_single_quotes "${command}"; local command_script="${_ret}"
+        command="sh -lc ${command_script}"
     fi
     local description="compiling.${_target_mode} ${sourcefile}"
     _ninja_escape "${command}"; command="${_ret}"
@@ -4669,9 +4674,10 @@ _ninja_add_build_target() {
     _toolchain_linkcmd "${toolkind}" "${targetfile}" "${objectfiles}" "${linkflags}"; local linkcmd="${_ret}"
 
     local command=""
+    local use_shell_wrapper=false
     if is_host "msys" "cygwin" "mingw"; then
-        local targetdir_win="${targetdir//\//\\}"
-        command="cmd.exe /c if not exist \"${targetdir_win}\" mkdir \"${targetdir_win}\" && ${linkcmd}"
+        use_shell_wrapper=true
+        command="mkdir -p \"${targetdir}\" && ${linkcmd}"
     else
         command="mkdir -p \"${targetdir}\" && ${linkcmd}"
     fi
@@ -4696,6 +4702,10 @@ _ninja_add_build_target() {
         fi
     fi
 
+    if ${use_shell_wrapper}; then
+        _shell_escape_single_quotes "${command}"; local command_script="${_ret}"
+        command="sh -lc ${command_script}"
+    fi
     _ninja_escape "${command}"; command="${_ret}"
     _ninja_escape "${description}"; description="${_ret}"
 
@@ -4762,9 +4772,15 @@ _ninja_add_run_target() {
     _get_target_file "${target}"; local targetfile="${_ret}"
     local command=""
     if is_host "msys" "cygwin" "mingw"; then
-        local run_script="cd ${xmake_sh_projectdir} && ${targetfile}"
-        _shell_escape_single_quotes "${run_script}"; local escaped_run_script="${_ret}"
-        command="sh -lc ${escaped_run_script}"
+        local projectdir="${xmake_sh_projectdir}"
+        local targetfile_rel="./${targetfile}"
+        local targetfile_alt="./build/${targetfile#*/}"
+        local targetbuilddir="${targetfile%/*}"
+        local targetbuilddir_rel="./${targetbuilddir}"
+        local targetbuilddir_alt="./build/${targetbuilddir#*/}"
+        local run_script="cd \"${projectdir}\" && target=\"${targetfile_rel}\"; alt=\"${targetfile_alt}\"; if [ ! -f \"\$target\" ] && [ -f \"\$alt\" ]; then target=\"\$alt\"; fi; if [ ! -f \"\$target\" ]; then echo \"[ninja run] missing ${targetfile_rel} (and fallback ${targetfile_alt})\"; ls -l \"${targetbuilddir_rel}\" || true; ls -l \"${targetbuilddir_alt}\" || true; exit 1; fi; \"\$target\""
+        _shell_escape_single_quotes "${run_script}"; local run_script_escaped="${_ret}"
+        command="sh -lc ${run_script_escaped}"
     elif is_plat "macosx"; then
         command="DYLD_LIBRARY_PATH=${targetdir} ${targetfile}"
     elif is_plat "linux" "bsd"; then
