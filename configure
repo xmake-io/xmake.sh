@@ -4881,8 +4881,30 @@ if [ -n "\${PREFIX}" ]; then
 fi
 destdir="\${DESTDIR}"
 installdir_template=${escaped_installdir_template}
-prefix_sed=\$(printf '%s' "\${prefix}" | sed 's/[#&"\\]/\\&/g')
 placeholder='\${prefix}'
+_rp_value=""
+_rp_replacement=""
+_rp_before=""
+_rp_after=""
+_rp_result=""
+
+replace_placeholder() {
+    _rp_value="\$1"
+    _rp_replacement="\$2"
+    while :; do
+        case "\${_rp_value}" in
+            *\${placeholder}*)
+                _rp_before="\${_rp_value%%\${placeholder}*}"
+                _rp_after="\${_rp_value#*\${placeholder}}"
+                _rp_value="\${_rp_before}\${_rp_replacement}\${_rp_after}"
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+    _rp_result="\${_rp_value}"
+}
 
 projectdir=${escaped_projectdir}
 cd "\${projectdir}"
@@ -4898,7 +4920,8 @@ if [ -z "\${installdir_template}" ]; then
     fi
 else
     installdir="\${installdir_template}"
-    installdir=\$(printf '%s' "\${installdir}" | sed "s#\${placeholder}#\${prefix_sed}#g")
+    replace_placeholder "\${installdir}" "\${prefix}"
+    installdir="\${_rp_result}"
     if [ -n "\${destdir}" ]; then
         case "\${installdir}" in
             /*) ;;
@@ -4907,10 +4930,9 @@ else
     fi
 fi
 
-installdir_sed=\$(printf '%s' "\${installdir}" | sed 's/[#&"\\]/\\&/g')
-
 resolve_prefix_path() {
-    printf '%s' "\$1" | sed "s#\${placeholder}#\${installdir_sed}#g"
+    replace_placeholder "\$1" "\${installdir}"
+    printf '%s' "\${_rp_result}"
 }
 
 copy_file() {
