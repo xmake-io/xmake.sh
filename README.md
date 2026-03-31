@@ -213,104 +213,409 @@ $ ninja install
 $ ninja run
 ```
 
-### Replace file content before compilation
-
-We can use the `{replace = {search, replace}}` extra parameter in `add_files` to replace specific text content
-in source files before compilation. The original source files will not be modified, temporary files with the replacements
-will be generated in the `build/.replace/` directory.
-
-```sh
-target "test_replace"
-    set_kind "binary"
-    add_files "*.cpp" "{replace = {HELLO_REPLACE, hello}}" "{replace = {VERSION_REPLACE, 1.0.0}}"
-```
-
-Multiple replacement rules can be specified by passing multiple `{replace = {search, replace}}` parameters.
-
 ### Supported apis
 
-- [x] set_project
-- [x] set_version
-- [x] includes
-- [x] is_plat
-- [x] is_arch
-- [x] is_host
-- [x] is_mode
-- [x] is_config
-- [x] has_config
-- [x] set_config
-- [x] target
-  - [x] set_kind
-  - [x] add_deps
-  - [x] add_files (support `{replace = {search, replace}}`)
-  - [x] set_basename
-  - [x] set_extension
-  - [x] set_filename
-  - [x] set_prefixname
-  - [x] set_targetdir
-  - [x] set_objectdir
-  - [x] add_defines
-  - [x] add_undefines
-  - [x] add_includedirs
-  - [x] add_linkdirs
-  - [x] add_rpathdirs
-  - [x] add_links
-  - [x] add_syslinks
-  - [x] set_strip
-  - [x] set_symbols
-  - [x] set_languages
-  - [x] set_warnings
-  - [x] set_optmizes
-  - [x] add_frameworks
-  - [x] add_frameworkdirs
-  - [x] add_cflags
-  - [x] add_cxflags
-  - [x] add_cxxflags
-  - [x] add_mflags
-  - [x] add_mxflags
-  - [x] add_mxxflags
-  - [x] add_asflags
-  - [x] add_ldflags
-  - [x] add_shflags
-  - [x] add_arflags
-  - [x] set_configdir
-  - [x] set_configfiles
-  - [x] set_configvar
-  - [x] set_installdir
-  - [x] add_installfiles
-  - [x] add_headerfiles
-  - [x] add_options
-  - [x] before_install
-  - [x] after_install
-- [x] target_end
-- [x] option
-  - [x] set_default
-  - [x] set_description
-  - [x] set_showmenu
-  - [x] add_defines
-  - [x] add_undefines
-  - [x] add_includedirs
-  - [x] add_linkdirs
-  - [x] add_links
-  - [x] add_syslinks
-  - [x] add_cflags
-  - [x] add_cxflags
-  - [x] add_cxxflags
-  - [x] add_cfuncs
-  - [x] add_cxxfuncs
-  - [x] add_cincludes
-  - [x] add_cxxincludes
-  - [x] add_ctypes
-  - [x] add_cxxtypes
-  - [x] add_csnippets
-  - [x] add_cxxsnippets
-- [x] option_end
-- [x] toolchain
-  - [x] set_toolset
-  - [ ] set_sdkdir
-  - [ ] set_bindir
-  - [ ] set_cross
-- [x] toolchain_end
+#### Global scope
+
+##### set_project
+
+Set the project name.
+
+```sh
+set_project "hello"
+```
+
+##### set_version
+
+Set the project version, optional build date format and soname version.
+
+```sh
+set_version "1.0.1" "%Y%m%d%H%M" "1"
+```
+
+##### includes
+
+Include sub-project files from subdirectories.
+
+```sh
+includes "foo" "bar"
+```
+
+##### Condition functions
+
+```sh
+# check target platform: linux, macosx, windows, mingw, cross, ...
+if is_plat "linux" "macosx"; then ... fi
+
+# check target architecture: x86_64, arm64, ...
+if is_arch "x86_64"; then ... fi
+
+# check host OS: linux, macosx, msys, cygwin, ...
+if is_host "linux"; then ... fi
+
+# check build mode: debug, release, ...
+if is_mode "debug"; then ... fi
+
+# check if an option config value equals a specific value
+if is_config "option_name" "value"; then ... fi
+
+# check if an option is enabled
+if has_config "pthread"; then ... fi
+```
+
+##### set_config
+
+Set a config option value.
+
+```sh
+set_config "option_name" "value"
+```
+
+#### Target scope
+
+##### target / target_end
+
+Define a build target. All target settings between `target` and `target_end` (or the next `target`) belong to this target.
+
+```sh
+target "demo"
+    set_kind "binary"
+    add_files "*.cpp"
+target_end
+```
+
+##### set_kind
+
+Set the target type: `binary`, `static`, or `shared`.
+
+```sh
+set_kind "binary"
+set_kind "static"
+set_kind "shared"
+```
+
+##### set_default
+
+Set whether this target is built by default.
+
+```sh
+set_default false
+```
+
+##### add_deps
+
+Add target dependencies.
+
+```sh
+add_deps "foo" "bar"
+```
+
+##### add_files
+
+Add source files with glob patterns. Supports `{replace = {search, replace}}` to replace text content before compilation.
+The original source files will not be modified, temporary files will be generated in the `build/.replace/` directory.
+
+```sh
+add_files "*.cpp"
+add_files "src/**/*.c"
+add_files "*.cpp" "{replace = {HELLO, hello}}" "{replace = {VERSION, 1.0.0}}"
+```
+
+##### set_basename / set_extension / set_filename / set_prefixname
+
+Set the target output file naming.
+
+```sh
+set_basename "demo"       # output base name
+set_extension ".exe"      # output file extension
+set_filename "demo.exe"   # output full filename
+set_prefixname "lib"      # output prefix (e.g. "lib" for libfoo.a)
+```
+
+##### set_targetdir / set_objectdir
+
+Set custom output directories for the target binary and object files.
+
+```sh
+set_targetdir "${builddir}/bin"
+set_objectdir "${builddir}/objs"
+```
+
+##### add_defines / add_undefines
+
+Add preprocessor definitions or undefinitions. Use `{public}` to propagate to dependent targets.
+
+```sh
+add_defines "DEBUG" "TEST"
+add_defines "FOO=bar" "{public}"
+add_undefines "NDEBUG"
+```
+
+##### add_includedirs
+
+Add header search directories. Use `{public}` to propagate to dependent targets.
+
+```sh
+add_includedirs "src" "include"
+add_includedirs "include" "{public}"
+```
+
+##### add_linkdirs
+
+Add library search directories. Use `{public}` to propagate to dependent targets.
+
+```sh
+add_linkdirs "/usr/local/lib"
+add_linkdirs "lib" "{public}"
+```
+
+##### add_rpathdirs
+
+Add runtime library search directories (RPATH).
+
+```sh
+add_rpathdirs "/usr/local/lib"
+```
+
+##### add_links / add_syslinks
+
+Add link libraries or system libraries. Use `{public}` to propagate to dependent targets.
+
+```sh
+add_links "foo" "bar"
+add_links "foo" "{public}"
+add_syslinks "pthread" "dl" "m"
+```
+
+##### set_strip
+
+Set the strip mode: `all`, `debug`.
+
+```sh
+set_strip "all"
+```
+
+##### set_symbols
+
+Set the symbol info mode: `debug`, `hidden`.
+
+```sh
+set_symbols "debug"
+set_symbols "hidden"
+```
+
+##### set_languages
+
+Set the C/C++ language standards.
+
+```sh
+set_languages "c99" "c++11"
+```
+
+##### set_warnings
+
+Set the warning levels: `all`, `error`, `allextra`, `everything`, `none`.
+
+```sh
+set_warnings "all" "error"
+```
+
+##### set_optimizes
+
+Set the optimization levels: `none`, `fast`, `faster`, `fastest`, `smallest`, `aggressive`.
+
+```sh
+set_optimizes "fastest"
+```
+
+##### add_frameworks / add_frameworkdirs
+
+Add Apple frameworks and framework search directories (macOS/iOS). Use `{public}` to propagate to dependent targets.
+
+```sh
+add_frameworks "CoreFoundation" "Security"
+add_frameworkdirs "/Library/Frameworks"
+```
+
+##### Compiler/linker flags
+
+Add raw compiler and linker flags directly.
+
+```sh
+add_cflags "-fno-strict-aliasing"         # C only
+add_cxflags "-DFOO"                       # C and C++
+add_cxxflags "-fno-rtti"                  # C++ only
+add_mflags "-fmodules"                    # Objective-C only
+add_mxflags "-fmodules"                   # Objective-C and Objective-C++
+add_mxxflags "-fno-objc-arc"              # Objective-C++ only
+add_asflags "-DASM_FLAG"                  # Assembler
+add_ldflags "-L/usr/local/lib"            # Binary linker
+add_shflags "-shared"                     # Shared library linker
+add_arflags "-cr"                         # Static library archiver
+```
+
+##### add_configfiles / set_configdir / set_configvar
+
+Add config header template files with variable substitution. Template files use `${VAR}` placeholders.
+
+```sh
+add_configfiles "config.h.in"
+set_configdir "${builddir}/include"
+set_configvar "HAS_PTHREAD" 1
+set_configvar "VERSION" "1.0.0"
+```
+
+##### set_installdir / add_installfiles / add_headerfiles
+
+Set install directory and add files for installation. Parentheses `()` define the relative path portion to install.
+
+```sh
+set_installdir "/usr/local"
+add_installfiles "res/(png/**.png)" "share"
+add_headerfiles "(include/*.h)" "mylib"
+add_headerfiles "src/(*.h)" "mylib"
+```
+
+##### add_options
+
+Bind option dependencies to this target. Use `{public}` to propagate to dependent targets.
+
+```sh
+add_options "pthread" "lua"
+```
+
+##### before_install / after_install
+
+Set callback functions to run before or after installation.
+
+```sh
+before_install "my_before_install"
+after_install "my_after_install"
+
+my_before_install() {
+    echo "preparing install ..."
+}
+```
+
+##### set_version (target scope)
+
+Set version for the target with optional build date format and soname version.
+
+```sh
+set_version "1.0.1" "%Y%m%d%H%M" "1"
+```
+
+#### Option scope
+
+##### option / option_end
+
+Define a config option. Short form with inline description and default value, or block form for complex detection.
+
+```sh
+# short form
+option "debug" "Enable debug mode." false
+
+# block form
+option "pthread"
+    add_links "pthread"
+    add_cincludes "pthread.h"
+    add_cfuncs "pthread_create"
+option_end
+```
+
+##### set_default / set_description / set_showmenu
+
+Set option properties.
+
+```sh
+option "myopt"
+    set_default true
+    set_description "Enable my feature."
+    set_showmenu true
+option_end
+```
+
+##### before_check
+
+Set a callback function to run before option detection.
+
+```sh
+option "lua"
+    add_cfuncs "lua_pushstring"
+    add_cincludes "lua.h"
+    before_check "option_find_lua"
+option_end
+
+option_find_lua() {
+    option "lua"
+        add_cxflags `pkg-config --cflags lua5.4 2>/dev/null`
+        add_ldflags `pkg-config --libs lua5.4 2>/dev/null`
+    option_end
+}
+```
+
+##### Detection functions
+
+Check for C/C++ functions, includes, types, and code snippets during option detection.
+
+```sh
+option "pthread"
+    add_cfuncs "pthread_create"           # check C functions exist
+    add_cxxfuncs "std::thread::joinable"  # check C++ functions exist
+    add_cincludes "pthread.h"             # check C headers exist
+    add_cxxincludes "thread"              # check C++ headers exist
+    add_ctypes "pthread_t"                # check C types exist
+    add_cxxtypes "std::string"            # check C++ types exist
+    add_csnippets "int x = 0;"            # check C code snippet compiles
+    add_cxxsnippets "constexpr int k = 0;" # check C++ code snippet compiles
+option_end
+```
+
+##### Option compiler/linker flags
+
+Add flags that are applied when the option is enabled.
+
+```sh
+option "myopt"
+    add_defines "USE_MYOPT"
+    add_undefines "OLD_OPT"
+    add_includedirs "/usr/local/include"
+    add_linkdirs "/usr/local/lib"
+    add_links "mylib"
+    add_syslinks "dl"
+    add_cflags "-DFOO"
+    add_cxflags "-DBAR"
+    add_cxxflags "-std=c++17"
+    add_ldflags "-L/opt/lib"
+option_end
+```
+
+#### Toolchain scope
+
+##### toolchain / toolchain_end
+
+Define a custom toolchain.
+
+```sh
+toolchain "myclang"
+    set_toolset "cc" "clang"
+    set_toolset "cxx" "clang++"
+    set_toolset "ld" "clang++"
+    set_toolset "sh" "clang++"
+    set_toolset "ar" "ar"
+toolchain_end
+```
+
+##### set_toolset
+
+Set the compiler/linker program for a specific tool kind: `cc`, `cxx`, `mm`, `mxx`, `as`, `ld`, `sh`, `ar`.
+
+```sh
+set_toolset "cc" "gcc"
+set_toolset "cxx" "g++"
+set_toolset "ld" "g++"
+set_toolset "ar" "ar"
+```
 
 ## Contacts
 
