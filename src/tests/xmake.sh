@@ -8,3 +8,8 @@ for name in ${tests}; do
         add_defines "TEST=\"${name}\""
         add_cxflags "-DIMPL_API=\"extern \\\"C\\\" \""
 done
+
+target "test_replace"
+    set_kind "binary"
+    add_deps "foo"
+    add_files "test_replace.cpp" "{replace = {HELLO_REPLACE, hello}}" "{replace = {VERSION_REPLACE, 1.0.0}}"

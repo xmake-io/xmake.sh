@@ -213,6 +213,20 @@ $ ninja install
 $ ninja run
 ```
 
+### Replace file content before compilation
+
+We can use the `{replace = {search, replace}}` extra parameter in `add_files` to replace specific text content
+in source files before compilation. The original source files will not be modified, temporary files with the replacements
+will be generated in the `build/.replace/` directory.
+
+```sh
+target "test_replace"
+    set_kind "binary"
+    add_files "*.cpp" "{replace = {HELLO_REPLACE, hello}}" "{replace = {VERSION_REPLACE, 1.0.0}}"
+```
+
+Multiple replacement rules can be specified by passing multiple `{replace = {search, replace}}` parameters.
+
 ### Supported apis
 
 - [x] set_project
@@ -228,7 +242,7 @@ $ ninja run
 - [x] target
   - [x] set_kind
   - [x] add_deps
-  - [x] add_files
+  - [x] add_files (support `{replace = {search, replace}}`)
   - [x] set_basename
   - [x] set_extension
   - [x] set_filename

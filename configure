@@ -1649,6 +1649,41 @@ _get_target_librarydeps() {
     _ret="${librarydeps}"
 }
 
+# sanitize file path for use as map key
+_sanitize_filekey() {
+    local key="${1}"
+    string_replace "${key}" "/" "__"; key="${_ret}"
+    string_replace "${key}" "." "_"; key="${_ret}"
+    string_replace "${key}" "-" "_"; key="${_ret}"
+    string_replace "${key}" "+" "_"; key="${_ret}"
+    _ret="${key}"
+}
+
+# add file replace rule for target
+# stores sed patterns like "s|search|replace|g" per source file
+_add_target_file_replace() {
+    local target="${1}"
+    local sourcefile="${2}"
+    local search="${3}"
+    local replace="${4}"
+    _sanitize_filekey "${sourcefile}"; local filekey="${_ret}"
+    _map_get "targets" "${target}_replaces_${filekey}"; local patterns="${_ret}"
+    if test_nz "${patterns}"; then
+        patterns="${patterns};s|${search}|${replace}|g"
+    else
+        patterns="s|${search}|${replace}|g"
+    fi
+    _map_set "targets" "${target}_replaces_${filekey}" "${patterns}"
+}
+
+# get file replace sed patterns for target
+_get_target_file_replaces() {
+    local target="${1}"
+    local sourcefile="${2}"
+    _sanitize_filekey "${sourcefile}"; local filekey="${_ret}"
+    _map_get "targets" "${target}_replaces_${filekey}"
+}
+
 # get sourcefiles in target
 _get_target_sourcefiles() {
     local name="${1}"
@@ -2063,6 +2098,7 @@ _add_target_filepaths() {
             _targets_toolkinds="${_targets_toolkinds} ${sourcekind}"
         done
     fi
+    _xmake_sh_last_resolved_files=""
     for file in ${list}; do
         string_replace "${file}" "?" "*"; file="${_ret}"
         if ! path_is_absolute "${file}"; then
@@ -2083,6 +2119,7 @@ _add_target_filepaths() {
         for file in ${files}; do
             path_relative "${xmake_sh_projectdir}" "${file}"; file="${_ret}"
             _add_target_item "${_xmake_sh_target_current}" "${key}" "${file}"
+            _xmake_sh_last_resolved_files="${_xmake_sh_last_resolved_files} ${file}"
         done
     done
 }
@@ -2273,7 +2310,40 @@ add_files() {
     if ! ${_loading_targets}; then
         return
     fi
-    _add_target_filepaths "files" "$@"
+
+    # separate file patterns from replace rules
+    local has_replaces=false
+    local fileargs=""
+    for arg in "$@"; do
+        case "${arg}" in
+            \{replace*) has_replaces=true ;;
+            *) fileargs="${fileargs} ${arg}" ;;
+        esac
+    done
+
+    _add_target_filepaths "files" ${fileargs}
+
+    # store replace rules for resolved files
+    if ${has_replaces}; then
+        local sourcefile=""
+        for sourcefile in ${_xmake_sh_last_resolved_files}; do
+            for arg in "$@"; do
+                case "${arg}" in
+                    \{replace*\})
+                        # parse {replace = {search, replace}}
+                        local content="${arg#\{replace = \{}"
+                        content="${content%\}\}}"
+                        local search="${content%%,*}"
+                        local rep="${content#*,}"
+                        # trim spaces
+                        search="${search# }"; search="${search% }"
+                        rep="${rep# }"; rep="${rep% }"
+                        _add_target_file_replace "${_xmake_sh_target_current}" "${sourcefile}" "${search}" "${rep}"
+                        ;;
+                esac
+            done
+        done
+    fi
 }
 
 # add install files in target
@@ -4196,9 +4266,14 @@ _gmake_add_build_object_for_gcc_clang() {
     local sourcefile="${2}"
     local objectfile="${3}"
     local flagname="${4}"
+    local replace_cmd="${5}"
+    local extra_flags="${6}"
     path_directory "${objectfile}"; local objectdir="${_ret}"
+    if test_nz "${replace_cmd}"; then
+        print "\t@${replace_cmd}" >> "${xmake_sh_makefile}"
+    fi
     print "\t@mkdir -p ${objectdir}" >> "${xmake_sh_makefile}"
-    print "\t\$(VV)\$(${kind}) -c \$(${flagname}) -o ${objectfile} ${sourcefile}" >> "${xmake_sh_makefile}"
+    print "\t\$(VV)\$(${kind}) -c ${extra_flags}\$(${flagname}) -o ${objectfile} ${sourcefile}" >> "${xmake_sh_makefile}"
 }
 
 _gmake_add_build_object() {
@@ -4210,18 +4285,34 @@ _gmake_add_build_object() {
     path_toolname "${program}"; local toolname="${_ret}"
     _get_flagname "${sourcekind}"; local flagname="${_ret}"
     flagname="${target}_${flagname}"
+
+    # check for file replace rules
+    local actual_sourcefile="${sourcefile}"
+    _get_target_file_replaces "${target}" "${sourcefile}"; local replace_patterns="${_ret}"
+    local replace_cmd=""
+    local extra_flags=""
+    if test_nz "${replace_patterns}"; then
+        local replacefile="${xmake_sh_builddir}/.replace/${target}/${sourcefile}"
+        path_directory "${replacefile}"; local replacefile_dir="${_ret}"
+        replace_cmd="mkdir -p \"${replacefile_dir}\" && sed '${replace_patterns}' \"${sourcefile}\" > \"${replacefile}\""
+        actual_sourcefile="${replacefile}"
+        # add original source directory to include path for resolving relative #include
+        path_directory "${sourcefile}"; local source_dir="${_ret}"
+        extra_flags="-I${source_dir} "
+    fi
+
     echo "${objectfile}: ${sourcefile}" >> "${xmake_sh_makefile}"
     print "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_makefile}"
     case "${toolname}" in
-        gcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        gxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        clang) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        clangxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        emcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        emxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        cosmocc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        cosmocxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
-        tcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${sourcefile}" "${objectfile}" "${flagname}";;
+        gcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
+        gxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
+        clang) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
+        clangxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
+        emcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
+        emxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
+        cosmocc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
+        cosmocxx) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
+        tcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
         *) raise "unknown toolname(${toolname})!" ;;
     esac
     echo "" >> "${xmake_sh_makefile}"
@@ -4683,10 +4774,30 @@ _ninja_add_build_object() {
     local objectfile="${3}"
     path_sourcekind "${sourcefile}"; local sourcekind="${_ret}"
     _get_target_flags "${target}" "${sourcekind}"; local flags="${_ret}"
-    _toolchain_compcmd "${sourcekind}" "${objectfile}" "${sourcefile}" "${flags}"; local compcmd="${_ret}"
+
+    # check for file replace rules
+    local actual_sourcefile="${sourcefile}"
+    _get_target_file_replaces "${target}" "${sourcefile}"; local replace_patterns="${_ret}"
+    local replace_cmd=""
+    if test_nz "${replace_patterns}"; then
+        local replacefile="${xmake_sh_builddir}/.replace/${target}/${sourcefile}"
+        path_directory "${replacefile}"; local replacefile_dir="${_ret}"
+        replace_cmd="mkdir -p \"${replacefile_dir}\" && sed '${replace_patterns}' \"${sourcefile}\" > \"${replacefile}\""
+        actual_sourcefile="${replacefile}"
+        # add original source directory to include path for resolving relative #include
+        path_directory "${sourcefile}"; local source_dir="${_ret}"
+        flags="-I${source_dir} ${flags}"
+    fi
+
+    _toolchain_compcmd "${sourcekind}" "${objectfile}" "${actual_sourcefile}" "${flags}"; local compcmd="${_ret}"
     path_directory "${objectfile}"; local objectdir="${_ret}"
     local use_shell_wrapper=false
-    local command="mkdir -p \"${objectdir}\" && ${compcmd}"
+    local command=""
+    if test_nz "${replace_cmd}"; then
+        command="${replace_cmd} && mkdir -p \"${objectdir}\" && ${compcmd}"
+    else
+        command="mkdir -p \"${objectdir}\" && ${compcmd}"
+    fi
     if is_host "msys" "cygwin" "mingw"; then
         use_shell_wrapper=true
     fi
