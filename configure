@@ -4302,6 +4302,9 @@ _gmake_add_build_object() {
     fi
 
     echo "${objectfile}: ${sourcefile}" >> "${xmake_sh_makefile}"
+    if test_nz "${replace_cmd}"; then
+        print "\t@echo replacing.${_target_mode} ${sourcefile}" >> "${xmake_sh_makefile}"
+    fi
     print "\t@echo compiling.${_target_mode} ${sourcefile}" >> "${xmake_sh_makefile}"
     case "${toolname}" in
         gcc) _gmake_add_build_object_for_gcc_clang "${sourcekind}" "${actual_sourcefile}" "${objectfile}" "${flagname}" "${replace_cmd}" "${extra_flags}";;
@@ -4794,7 +4797,7 @@ _ninja_add_build_object() {
     local use_shell_wrapper=false
     local command=""
     if test_nz "${replace_cmd}"; then
-        command="${replace_cmd} && mkdir -p \"${objectdir}\" && ${compcmd}"
+        command="echo replacing.${_target_mode} ${sourcefile} && ${replace_cmd} && mkdir -p \"${objectdir}\" && ${compcmd}"
     else
         command="mkdir -p \"${objectdir}\" && ${compcmd}"
     fi
